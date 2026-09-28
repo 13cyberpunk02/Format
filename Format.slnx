@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Services/" />
+  <Folder Name="/src/Services/Auth/">
+    <Project Path="src/Services/Auth/Format.Auth.Api/Format.Auth.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Print/">
+    <Project Path="src/Services/Print/Format.Print.Api/Format.Print.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Storage/">
+    <Project Path="src/Services/Storage/Format.Storage.Api/Format.Storage.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/Format.Layout/Format.Layout.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Format.Layout.Tests/Format.Layout.Tests.csproj" />
+    <Project Path="tests/Format.Print.Tests/Format.Print.Tests.csproj" />
+  </Folder>
+</Solution>

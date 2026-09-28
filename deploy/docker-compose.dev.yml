@@ -1,0 +1,9 @@
+services:
+  cups:
+    build: ./cups-dev
+    container_name: format-cups
+    ports:
+      - "631:631"
+    volumes:
+      - ./cups-dev/in:/in                      # сюда кладём файлы для печати
+      - ./cups-dev/out:/var/spool/cups-pdf/out # сюда cups-pdf складывает «напечатанное»
