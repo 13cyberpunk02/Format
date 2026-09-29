@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 namespace Format.Auth.Api.Endpoints;
 
 public sealed record LoginRequest(string? Email, string? Password);
+
 public sealed record ChangePasswordRequest(string? CurrentPassword, string? NewPassword);
 
 public sealed record UserDto(Guid Id, string Email, string DisplayName, string Role)
@@ -30,6 +31,9 @@ public static class AuthEndpoints
         var group = app.MapGroup("/auth");
 
         group.MapPost("/login", Login).AllowAnonymous().RequireRateLimiting("login");
+        group.MapPost("/refresh", Refresh).AllowAnonymous();
+        group.MapPost("/logout", Logout).AllowAnonymous();
+        group.MapPost("/me/logout-all", LogoutEverywhere);
         group.MapGet("/.well-known/openid-configuration", Discovery).AllowAnonymous();
         group.MapGet("/.well-known/jwks.json", Jwks).AllowAnonymous();
 
@@ -41,6 +45,9 @@ public static class AuthEndpoints
 
     private static async Task<IResult> Login(
         LoginRequest request,
+        HttpResponse response,
+        RefreshTokenService refreshTokens,
+        IOptions<RefreshTokenOptions> refreshOptions,
         AuthDbContext db,
         IPasswordHasher<User> hasher,
         TokenService tokens,
@@ -86,10 +93,69 @@ public static class AuthEndpoints
         user.LastLoginAt = time.GetUtcNow();
         await db.SaveChangesAsync(ct);
 
+        var refresh = await refreshTokens.IssueAsync(user.Id, familyId: null, ct);
+        SetRefreshCookie(response, refresh, refreshOptions.Value);
+
         var token = tokens.CreateAccessToken(user);
         return Results.Ok(new LoginResponse(token.Token, token.ExpiresAt, UserDto.From(user)));
     }
-    
+
+    private static async Task<IResult> Refresh(
+        HttpContext http,
+        RefreshTokenService refreshTokens,
+        TokenService tokens,
+        IOptions<RefreshTokenOptions> options,
+        CancellationToken ct)
+    {
+        var o = options.Value;
+
+        if (!http.Request.Cookies.TryGetValue(o.CookieName, out var value) || string.IsNullOrEmpty(value))
+            return SessionExpired();
+
+        var result = await refreshTokens.RotateAsync(value, ct);
+        if (result is null)
+        {
+            ClearRefreshCookie(http.Response, o);
+            return SessionExpired();
+        }
+
+        SetRefreshCookie(http.Response, result.Token, o);
+
+        // Токен собирается заново из базы: новое ФИО или роль вступают в силу при продлении
+        var access = tokens.CreateAccessToken(result.User);
+        return Results.Ok(new LoginResponse(access.Token, access.ExpiresAt, UserDto.From(result.User)));
+    }
+
+    private static async Task<IResult> Logout(
+        HttpContext http,
+        RefreshTokenService refreshTokens,
+        IOptions<RefreshTokenOptions> options,
+        CancellationToken ct)
+    {
+        var o = options.Value;
+
+        if (http.Request.Cookies.TryGetValue(o.CookieName, out var value) &&
+            await refreshTokens.FindFamilyAsync(value, ct) is { } familyId)
+        {
+            await refreshTokens.RevokeFamilyAsync(familyId, ct);
+        }
+
+        ClearRefreshCookie(http.Response, o);
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> LogoutEverywhere(
+        ClaimsPrincipal principal,
+        HttpResponse response,
+        RefreshTokenService refreshTokens,
+        IOptions<RefreshTokenOptions> options,
+        CancellationToken ct)
+    {
+        await refreshTokens.RevokeAllAsync(principal.GetUserId(), exceptFamilyId: null, ct);
+        ClearRefreshCookie(response, options.Value);
+        return Results.NoContent();
+    }
+
     /// <summary>Документ обнаружения: кто издатель и где лежат ключи.</summary>
     private static IResult Discovery(HttpRequest request, IOptions<JwtOptions> options) =>
         Results.Ok(new
@@ -101,12 +167,12 @@ public static class AuthEndpoints
     /// <summary>Открытые ключи для проверки подписи токенов.</summary>
     private static IResult Jwks(JwtSigningKey key) =>
         Results.Ok(new { keys = new[] { key.PublicJwk } });
-    
+
     private static IResult InvalidCredentials() =>
         Results.Problem(
             statusCode: StatusCodes.Status401Unauthorized,
             title: "Неверная почта или пароль");
-    
+
     private static async Task<IResult> GetMe(ClaimsPrincipal principal, AuthDbContext db, CancellationToken ct)
     {
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == principal.GetUserId(), ct);
@@ -115,7 +181,10 @@ public static class AuthEndpoints
     }
 
     private static async Task<IResult> ChangeOwnPassword(
+        HttpRequest httpRequest,
         ChangePasswordRequest request,
+        RefreshTokenService refreshTokens,
+        IOptions<RefreshTokenOptions> refreshOptions,
         ClaimsPrincipal principal,
         AuthDbContext db,
         IPasswordHasher<User> hasher,
@@ -126,8 +195,10 @@ public static class AuthEndpoints
             return Results.NotFound();
 
         if (string.IsNullOrEmpty(request.CurrentPassword) ||
-            hasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword) == PasswordVerificationResult.Failed)
-            return Results.Problem(statusCode: StatusCodes.Status400BadRequest, title: "Текущий пароль указан неверно.");
+            hasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword) ==
+            PasswordVerificationResult.Failed)
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest,
+                title: "Текущий пароль указан неверно.");
 
         var error = UserRules.ValidatePassword(request.NewPassword, user.Email);
         if (error is not null)
@@ -136,6 +207,37 @@ public static class AuthEndpoints
         user.PasswordHash = hasher.HashPassword(user, request.NewPassword!);
         await db.SaveChangesAsync(ct);
 
+        // Закрываем все сессии, кроме текущей: пользователь остаётся в системе на этом устройстве
+        Guid? currentFamily = null;
+        if (httpRequest.Cookies.TryGetValue(refreshOptions.Value.CookieName, out var cookie))
+            currentFamily = await refreshTokens.FindFamilyAsync(cookie, ct);
+
+        await refreshTokens.RevokeAllAsync(user.Id, currentFamily, ct);
+        
         return Results.NoContent();
     }
+
+    private static void SetRefreshCookie(HttpResponse response, IssuedRefreshToken token,
+        RefreshTokenOptions options) =>
+        response.Cookies.Append(options.CookieName, token.Value, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = options.CookieSecure,
+            SameSite = SameSiteMode.Strict,
+            Path = options.CookiePath,
+            Expires = token.ExpiresAt,
+            IsEssential = true,
+        });
+
+    private static void ClearRefreshCookie(HttpResponse response, RefreshTokenOptions options) =>
+        response.Cookies.Delete(options.CookieName, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = options.CookieSecure,
+            SameSite = SameSiteMode.Strict,
+            Path = options.CookiePath,
+        });
+
+    private static IResult SessionExpired() =>
+        Results.Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Сессия истекла, войдите заново.");
 }

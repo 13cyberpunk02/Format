@@ -28,6 +28,9 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
         .UseNpgsql(builder.Configuration.GetConnectionString("Auth"))
         .UseSnakeCaseNamingConvention());
 
+builder.Services.Configure<RefreshTokenOptions>(builder.Configuration.GetSection("RefreshToken"));
+builder.Services.AddScoped<RefreshTokenService>();
+
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.Configure<BootstrapAdminOptions>(builder.Configuration.GetSection("BootstrapAdmin"));
 

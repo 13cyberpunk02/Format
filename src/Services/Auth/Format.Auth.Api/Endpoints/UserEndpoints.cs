@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Format.Auth.Api.Data;
+using Format.Auth.Api.Tokens;
 using Format.Auth.Api.Users;
 using Format.Security;
 using Microsoft.AspNetCore.Identity;
@@ -102,6 +103,7 @@ public static class UserEndpoints
     private static async Task<IResult> Update(
         Guid id,
         UpdateUserRequest request,
+        RefreshTokenService refreshTokens,
         ClaimsPrincipal principal,
         AuthDbContext db,
         TimeProvider time,
@@ -138,12 +140,17 @@ public static class UserEndpoints
         }
 
         await db.SaveChangesAsync(ct);
+        
+        if (user.Status != UserStatus.Active)
+            await refreshTokens.RevokeAllAsync(user.Id, exceptFamilyId: null, ct);
+        
         return Results.Ok(AdminUserDto.From(user));
     }
 
     private static async Task<IResult> SetPassword(
         Guid id,
         SetPasswordRequest request,
+        RefreshTokenService refreshTokens,
         AuthDbContext db,
         IPasswordHasher<User> hasher,
         CancellationToken ct)
@@ -158,7 +165,9 @@ public static class UserEndpoints
 
         user.PasswordHash = hasher.HashPassword(user, request.NewPassword!);
         await db.SaveChangesAsync(ct);
-
+        
+        await refreshTokens.RevokeAllAsync(user.Id, exceptFamilyId: null, ct);
+        
         return Results.NoContent();
     }
 

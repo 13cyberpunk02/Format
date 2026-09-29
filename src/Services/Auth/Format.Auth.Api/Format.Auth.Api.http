@@ -81,3 +81,21 @@ Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 { "status": "Active" }
+
+### Вход — в ответе заголовок Set-Cookie с format_refresh
+POST {{auth}}/auth/login
+Content-Type: application/json
+
+{ "email": "ivanov@company.ru", "password": "ivanov_dev_123" }
+
+### Продление — новый access-токен и новая cookie
+POST {{auth}}/auth/refresh
+
+### Ещё раз — работает, cookie уже новая
+POST {{auth}}/auth/refresh
+
+### Выход
+POST {{auth}}/auth/logout
+
+### Продление после выхода — 401
+POST {{auth}}/auth/refresh
