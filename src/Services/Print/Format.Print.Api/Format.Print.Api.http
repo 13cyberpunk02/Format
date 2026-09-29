@@ -46,3 +46,36 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "items": [ { "drawingId": "00000000-0000-0000-0000-000000000001", "copies": 1 } ] }
+
+### Создать заказ: весь комплект по 1 копии
+POST {{print}}/print/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "items": {{items1}} }
+
+> {% client.global.set("orderId", response.body.id); %}
+
+### Мои заказы
+GET {{print}}/print/orders
+Authorization: Bearer {{token}}
+
+### Один заказ
+GET {{print}}/print/orders/{{orderId}}
+Authorization: Bearer {{token}}
+
+### Вход Иванова
+POST {{auth}}/auth/login
+Content-Type: application/json
+
+{ "email": "ivanov@company.ru", "password": "ivanov_dev_123" }
+
+> {% client.global.set("userToken", response.body.accessToken); %}
+
+### Иванов смотрит заказ администратора — 403
+GET {{print}}/print/orders/{{orderId}}
+Authorization: Bearer {{userToken}}
+
+### Иванов смотрит свои заказы — пусто
+GET {{print}}/print/orders
+Authorization: Bearer {{userToken}}

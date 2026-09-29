@@ -6,3 +6,4 @@ riderModule.iml
 deploy/cups-dev/in/
 deploy/cups-dev/out/
 **/keys/
+**/spool/

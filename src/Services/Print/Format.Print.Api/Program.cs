@@ -1,9 +1,12 @@
+using System.Text.Json.Serialization;
 using Format.Layout;
 using Format.Print.Api.Composition;
 using Format.Print.Api.Cups;
+using Format.Print.Api.Data;
 using Format.Print.Api.Printing;
 using Format.Print.Api.Storage;
 using Format.Security;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,10 +16,24 @@ builder.Services.AddOpenApi();
 builder.Services.AddFormatAuthentication(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddDbContext<PrintDbContext>(options =>
+    options
+        .UseNpgsql(builder.Configuration.GetConnectionString("Print"))
+        .UseSnakeCaseNamingConvention());
+
+builder.Services.Configure<SpoolOptions>(builder.Configuration.GetSection("Spool"));
+builder.Services.AddSingleton<Spool>();
+builder.Services.AddSingleton(TimeProvider.System);
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
 // Раскладка
 builder.Services.AddSingleton(builder.Configuration.GetSection("Plotter").Get<PlotterSettings>() ?? new PlotterSettings());
 builder.Services.AddSingleton<LayoutPlanner>();
 builder.Services.AddSingleton<SheetComposer>();
+builder.Services.AddScoped<OrderProcessor>();
+builder.Services.AddHostedService<PrintQueueWorker>();
 
 // Сервис хранения — от имени пользователя
 builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));

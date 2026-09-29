@@ -27,4 +27,16 @@ public sealed class StorageClient(HttpClient http)
 
         return await response.Content.ReadFromJsonAsync<List<StorageDrawing>>(ct) ?? [];
     }
+    
+    public async Task DownloadAsync(Guid drawingId, string destinationPath, CancellationToken ct)
+    {
+        using var response = await http.GetAsync(
+            $"drawings/{drawingId}/file", HttpCompletionOption.ResponseHeadersRead, ct);
+
+        response.EnsureSuccessStatusCode();
+
+        await using var source = await response.Content.ReadAsStreamAsync(ct);
+        await using var target = File.Create(destinationPath);
+        await source.CopyToAsync(target, ct);
+    }
 }
