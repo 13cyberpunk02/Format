@@ -5,3 +5,4 @@ riderModule.iml
 /_ReSharper.Caches/
 deploy/cups-dev/in/
 deploy/cups-dev/out/
+**/keys/

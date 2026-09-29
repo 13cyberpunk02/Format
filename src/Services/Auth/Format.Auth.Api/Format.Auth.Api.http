@@ -1,0 +1,28 @@
+﻿@host = http://localhost:5169
+
+### Вход администратора
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "Admin@Company.ru ",
+  "password": "Admin_dev_123"
+}
+
+### Неверный пароль
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@company.ru",
+  "password": "wrong"
+}
+
+### Несуществующая почта
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "nobody@company.ru",
+  "password": "whatever"
+}

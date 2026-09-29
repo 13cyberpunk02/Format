@@ -1,7 +1,9 @@
-﻿using Format.Storage.Api.Data;
+﻿using System.Security.Claims;
+using Format.Storage.Api.Data;
 using Format.Storage.Api.Files;
 using Format.Storage.Api.Pdf;
 using Format.Layout;
+using Format.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Net.Http.Headers;
 
@@ -27,6 +29,7 @@ public static class DrawingEndpoints
 
     private static async Task<IResult> Upload(
         IFormFile file,
+        ClaimsPrincipal user,
         StorageDbContext db,
         IDrawingFileStore files,
         PdfPageSplitter splitter,
@@ -68,7 +71,8 @@ public static class DrawingEndpoints
                     WidthMm = page.WidthMm,
                     HeightMm = page.HeightMm,
                     SizeBytes = page.Content!.Length,
-                    UploadedBy = "dev", // заменим на пользователя из токена на этапе 6
+                    UploadedById = user.GetUserId(),
+                    UploadedByName = user.GetDisplayName(),
                     UploadedAt = uploadedAt,
                 };
 
@@ -237,29 +241,56 @@ public static class DrawingEndpoints
     }
 
     private static async Task<IResult> Delete(
-        Guid id, StorageDbContext db, IDrawingFileStore files, ILoggerFactory loggerFactory, CancellationToken ct)
+        Guid id,
+        ClaimsPrincipal user,
+        StorageDbContext db,
+        IDrawingFileStore files,
+        ILoggerFactory loggerFactory,
+        CancellationToken ct)
     {
-        var deleted = await db.Drawings.Where(d => d.Id == id).ExecuteDeleteAsync(ct);
-        if (deleted == 0)
+        var ownerId = await db.Drawings
+            .Where(d => d.Id == id)
+            .Select(d => (Guid?)d.UploadedById)
+            .FirstOrDefaultAsync(ct);
+
+        if (ownerId is null)
             return Results.NotFound();
 
+        if (ownerId != user.GetUserId() && !user.IsAdmin())
+            return Results.Problem(
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Нельзя удалить чужой чертёж");
+
+        await db.Drawings.Where(d => d.Id == id).ExecuteDeleteAsync(ct);
         await DeleteFilesAsync(files, [id], loggerFactory);
+
         return Results.NoContent();
     }
 
     private static async Task<IResult> DeleteUpload(
-        Guid uploadId, StorageDbContext db, IDrawingFileStore files, ILoggerFactory loggerFactory, CancellationToken ct)
+        Guid uploadId,
+        ClaimsPrincipal user,
+        StorageDbContext db,
+        IDrawingFileStore files,
+        ILoggerFactory loggerFactory,
+        CancellationToken ct)
     {
-        var ids = await db.Drawings
+        var pages = await db.Drawings
             .Where(d => d.UploadId == uploadId)
-            .Select(d => d.Id)
+            .Select(d => new { d.Id, d.UploadedById })
             .ToListAsync(ct);
 
-        if (ids.Count == 0)
+        if (pages.Count == 0)
             return Results.NotFound();
 
+        var userId = user.GetUserId();
+        if (pages.Any(p => p.UploadedById != userId) && !user.IsAdmin())
+            return Results.Problem(
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Нельзя удалить чужой комплект");
+
         await db.Drawings.Where(d => d.UploadId == uploadId).ExecuteDeleteAsync(ct);
-        await DeleteFilesAsync(files, ids, loggerFactory);
+        await DeleteFilesAsync(files, pages.Select(p => p.Id), loggerFactory);
 
         return Results.NoContent();
     }

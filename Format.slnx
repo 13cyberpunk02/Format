@@ -12,6 +12,7 @@
   </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/Format.Layout/Format.Layout.csproj" />
+    <Project Path="src/Shared/Format.Security/Format.Security.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Format.Layout.Tests/Format.Layout.Tests.csproj" />

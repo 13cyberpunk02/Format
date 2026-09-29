@@ -26,7 +26,11 @@ public sealed class Drawing
     public long SizeBytes { get; init; }
 
     /// <summary>Кто загрузил. Пока строка, после этапа 6 - идентификатор пользователя.</summary>
-    public required string UploadedBy { get; init; }
+    /// <summary>Идентификатор пользователя из токена (sub).</summary>
+    public Guid UploadedById { get; init; }
+
+    /// <summary>Имя на момент загрузки — чтобы показывать в списке, не обращаясь к сервису авторизации.</summary>
+    public required string UploadedByName { get; init; }
 
     public DateTimeOffset UploadedAt { get; init; }
 }

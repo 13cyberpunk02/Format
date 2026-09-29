@@ -14,7 +14,8 @@ public sealed class StorageDbContext(DbContextOptions<StorageDbContext> options)
         drawing.HasIndex(d => d.UploadId);
         drawing.Property(d => d.FileName).HasMaxLength(260);
         drawing.Property(d => d.FormatName).HasMaxLength(16);
-        drawing.Property(d => d.UploadedBy).HasMaxLength(128);
+        drawing.Property(d => d.UploadedByName).HasMaxLength(200);
+        drawing.HasIndex(d => d.UploadedById);
 
         // Список чертежей чаще всего сортируется по дате загрузки
         drawing.HasIndex(d => d.UploadedAt);

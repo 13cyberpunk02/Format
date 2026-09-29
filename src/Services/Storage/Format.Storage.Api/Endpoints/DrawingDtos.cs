@@ -12,12 +12,14 @@ public sealed record DrawingDto(
     double WidthMm,
     double HeightMm,
     long SizeBytes,
-    string UploadedBy,
+    Guid UploadedById,
+    string UploadedByName,
     DateTimeOffset UploadedAt)
 {
     public static DrawingDto From(Drawing d) => new(
         d.Id, d.UploadId, d.FileName, d.PageNumber, d.PageCount, d.FormatName,
-        Math.Round(d.WidthMm, 1), Math.Round(d.HeightMm, 1), d.SizeBytes, d.UploadedBy, d.UploadedAt);
+        Math.Round(d.WidthMm, 1), Math.Round(d.HeightMm, 1), d.SizeBytes,
+        d.UploadedById, d.UploadedByName, d.UploadedAt);
 }
 
 public sealed record RejectedPageDto(int PageNumber, string Reason);

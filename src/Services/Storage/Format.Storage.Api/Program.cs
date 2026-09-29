@@ -1,6 +1,7 @@
 using Amazon.Runtime;
 using Amazon.S3;
 using Format.Layout;
+using Format.Security;
 using Format.Storage.Api.Data;
 using Format.Storage.Api.Endpoints;
 using Format.Storage.Api.Files;
@@ -19,6 +20,7 @@ builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = maxUpl
 
 builder.Services.AddOpenApi();
 
+builder.Services.AddFormatAuthentication(builder.Configuration);
 builder.Services.AddDbContext<StorageDbContext>(options =>
     options
         .UseNpgsql(builder.Configuration.GetConnectionString("Storage"))
@@ -47,6 +49,9 @@ builder.Services.AddSingleton<IAmazonS3>(services =>
 builder.Services.AddSingleton<IDrawingFileStore, S3DrawingFileStore>();
 
 var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
