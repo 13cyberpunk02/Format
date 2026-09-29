@@ -9,6 +9,15 @@ public sealed class Drawing
 
     /// <summary>Распознанный формат: "A2", "A4x5".</summary>
     public required string FormatName { get; init; }
+    
+    /// <summary>Общий идентификатор всех страниц одного загруженного файла.</summary>
+    public Guid UploadId { get; init; }
+
+    /// <summary>Номер страницы в исходном файле, с 1.</summary>
+    public int PageNumber { get; init; }
+
+    /// <summary>Сколько всего страниц было в исходном файле.</summary>
+    public int PageCount { get; init; }
 
     /// <summary>Фактический размер страницы из PDF, мм.</summary>
     public double WidthMm { get; init; }

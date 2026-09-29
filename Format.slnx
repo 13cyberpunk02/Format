@@ -16,5 +16,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/Format.Layout.Tests/Format.Layout.Tests.csproj" />
     <Project Path="tests/Format.Print.Tests/Format.Print.Tests.csproj" />
+    <Project Path="tests/Format.Storage.Tests/Format.Storage.Tests.csproj" />
   </Folder>
 </Solution>

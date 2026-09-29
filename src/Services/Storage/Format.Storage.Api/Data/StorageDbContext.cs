@@ -11,6 +11,7 @@ public sealed class StorageDbContext(DbContextOptions<StorageDbContext> options)
         var drawing = modelBuilder.Entity<Drawing>();
 
         drawing.HasKey(d => d.Id);
+        drawing.HasIndex(d => d.UploadId);
         drawing.Property(d => d.FileName).HasMaxLength(260);
         drawing.Property(d => d.FormatName).HasMaxLength(16);
         drawing.Property(d => d.UploadedBy).HasMaxLength(128);
