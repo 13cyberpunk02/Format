@@ -7,6 +7,8 @@ public enum JobStatus
     Completed,
     Failed,
     Cancelled,
+    /// <summary>Упавшее или отменённое задание, вместо которого при повторе отправлено новое.</summary>
+    Replaced,
 }
 
 /// <summary>Одно задание в CUPS: лист рулона (возможно, в нескольких копиях) или документ на офисный принтер.</summary>
@@ -17,6 +19,9 @@ public sealed class PrintJob
 
     /// <summary>Номер задания в CUPS - по нему узнаём его состояние.</summary>
     public int CupsJobId { get; init; }
+    
+    /// <summary>Что именно отправлено: "office:{drawingId}" или "sheet:{раскладка листа}". По нему повтор пропускает напечатанное.</summary>
+    public required string Key { get; init; }
 
     /// <summary>"plotter" или "office".</summary>
     public required string Printer { get; init; }

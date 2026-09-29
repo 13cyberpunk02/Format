@@ -83,3 +83,15 @@ Authorization: Bearer {{userToken}}
 ### Отмена заказа
 POST {{print}}/print/orders/{{orderId}}/cancel
 Authorization: Bearer {{token}}
+
+### Повтор заказа
+POST {{print}}/print/orders/{{orderId}}/retry
+Authorization: Bearer {{token}}
+
+### Все упавшие заказы
+GET {{print}}/print/admin/orders?status=Failed
+Authorization: Bearer {{token}}
+
+### Иванов пытается — 403
+GET {{print}}/print/admin/orders
+Authorization: Bearer {{userToken}}

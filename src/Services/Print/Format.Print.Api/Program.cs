@@ -36,6 +36,8 @@ builder.Services.AddScoped<OrderProcessor>();
 builder.Services.AddHostedService<PrintQueueWorker>();
 builder.Services.AddScoped<JobTracker>();
 builder.Services.AddHostedService<JobTrackingWorker>();
+builder.Services.AddScoped<SpoolCleaner>();
+builder.Services.AddHostedService<SpoolCleanupWorker>();
 
 // Сервис хранения - от имени пользователя
 builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));

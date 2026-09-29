@@ -110,9 +110,24 @@ public sealed class OrderProcessor(
         var items = order.Items.ToDictionary(i => i.DrawingId);
         var orderLabel = order.Id.ToString("N")[..8];
 
+        // При повторе: всё, что уже напечатано или стоит в очереди CUPS, второй раз не отправляем
+        var alreadySent = order.Jobs
+            .Where(j => j.Status is JobStatus.Completed or JobStatus.Pending)
+            .Select(j => j.Key)
+            .ToHashSet();
+
+        var skipped = 0;
+        
         // Офисный принтер: файл из спула как есть
         foreach (var office in plan.OfficeJobs)
         {
+            var key = $"office:{office.DrawingId}";
+            if (alreadySent.Contains(key))
+            {
+                skipped++;
+                continue;
+            }
+
             var item = items[office.DrawingId];
             var description = $"{item.FileName}, лист {item.PageNumber} ({office.Format.Name})";
 
@@ -120,7 +135,7 @@ public sealed class OrderProcessor(
             var cupsJobId = await cups.PrintOfficeAsync(
                 office.Format, pdf, office.Copies, $"Заказ {orderLabel}: {description}", ct);
 
-            await RecordJobAsync(order, cupsJobId, "office", description, office.Copies);
+            await RecordJobAsync(order, cupsJobId, key, "office", description, office.Copies);
         }
 
         // Плоттер: одинаковые листы - одним заданием с несколькими копиями
@@ -130,6 +145,13 @@ public sealed class OrderProcessor(
 
         for (var n = 0; n < sheetGroups.Count; n++)
         {
+            var key = $"sheet:{sheetGroups[n].Key}";
+            if (alreadySent.Contains(key))
+            {
+                skipped++;
+                continue;
+            }
+
             var sheet = sheetGroups[n].First();
             var copies = sheetGroups[n].Count();
             var description = $"Лист {n + 1} из {sheetGroups.Count}: {Describe(sheet)}";
@@ -146,7 +168,7 @@ public sealed class OrderProcessor(
                 var cupsJobId = await cups.PrintPlotterSheetAsync(
                     sheet, pdf, copies, $"Заказ {orderLabel}: {description}", ct);
 
-                await RecordJobAsync(order, cupsJobId, "plotter", description, copies);
+                await RecordJobAsync(order, cupsJobId, key, "plotter", description, copies);
             }
             finally
             {
@@ -154,16 +176,20 @@ public sealed class OrderProcessor(
                 File.Delete(path);
             }
         }
+        if (skipped > 0)
+            logger.LogInformation("Заказ {OrderId}: пропущено уже отправленных заданий — {Count}", order.Id, skipped);
     }
 
     /// <summary>Запомнить отправленное задание сразу - даже если следующий лист упадёт.</summary>
-    private async Task RecordJobAsync(PrintOrder order, int cupsJobId, string printer, string description, int copies)
+    private async Task RecordJobAsync(
+        PrintOrder order, int cupsJobId, string key, string printer, string description, int copies)
     {
         db.Jobs.Add(new PrintJob
         {
             Id = Guid.NewGuid(),
             OrderId = order.Id,
             CupsJobId = cupsJobId,
+            Key = key,
             Printer = printer,
             Description = description,
             Copies = copies,

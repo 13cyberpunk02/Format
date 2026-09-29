@@ -40,6 +40,8 @@ public sealed class PrintDbContext(DbContextOptions<PrintDbContext> options) : D
         job.Property(j => j.StateMessage).HasMaxLength(500);
         job.Property(j => j.Error).HasMaxLength(2000);
         job.HasIndex(j => j.Status);
+        job.Property(j => j.Key).HasMaxLength(500);
+        job.HasIndex(j => new { j.OrderId, j.Key });
 
         var item = modelBuilder.Entity<PrintOrderItem>();
 

@@ -22,16 +22,50 @@ public static class PrintEndpoints
     public static IEndpointRouteBuilder MapPrintEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/print");
-
+        var admin = app.MapGroup("/print/admin").RequireAuthorization(FormatAuthentication.AdminPolicy);
+        
+        admin.MapGet("/orders", ListAllOrders);
         group.MapPost("/preview", Preview);
         group.MapPost("/orders", CreateOrder);
         group.MapPost("/orders/{id:guid}/cancel", CancelOrder);
         group.MapGet("/orders", ListMyOrders);
         group.MapGet("/orders/{id:guid}", GetOrder);
+        group.MapPost("/orders/{id:guid}/retry", RetryOrder);
 
         return app;
     }
 
+    private static async Task<IResult> ListAllOrders(
+        PrintDbContext db,
+        CancellationToken ct,
+        int page = 1,
+        int pageSize = 50,
+        OrderStatus? status = null,
+        Guid? userId = null)
+    {
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 200);
+
+        var query = db.Orders.AsNoTracking();
+
+        if (status is not null)
+            query = query.Where(o => o.Status == status);
+
+        if (userId is not null)
+            query = query.Where(o => o.CreatedById == userId);
+
+        var total = await query.CountAsync(ct);
+
+        var orders = await query
+            .Include(o => o.Items)
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return Results.Ok(new PagedResult<OrderDto>([.. orders.Select(OrderDto.From)], total, page, pageSize));
+    }
+    
     private static async Task<IResult> Preview(
         PrintRequest request, StorageClient storage, LayoutPlanner planner, CancellationToken ct)
     {
@@ -125,6 +159,46 @@ public static class PrintEndpoints
         }
 
         return Results.Created($"/print/orders/{order.Id}", OrderDto.From(order));
+    }
+    
+    private static async Task<IResult> RetryOrder(
+        Guid id, ClaimsPrincipal user, PrintDbContext db, Spool spool, CancellationToken ct)
+    {
+        var order = await db.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == id, ct);
+
+        if (order is null)
+            return Results.NotFound();
+
+        if (order.CreatedById != user.GetUserId() && !user.IsAdmin())
+            return Results.Problem(statusCode: StatusCodes.Status403Forbidden, title: "Это чужой заказ.");
+
+        if (order.Status != OrderStatus.Failed)
+            return Conflict("Повторить можно только заказ, завершившийся ошибкой.");
+
+        if (!Directory.Exists(spool.OrderDirectory(id)))
+            return Conflict("Файлы заказа уже удалены. Создайте заказ заново.");
+
+        // Два изменения должны случиться вместе - открываем транзакцию явно
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+
+        var updated = await db.Orders
+            .Where(o => o.Id == id && o.Status == OrderStatus.Failed)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(o => o.Status, OrderStatus.Queued)
+                .SetProperty(o => o.Error, (string?)null)
+                .SetProperty(o => o.StartedAt, (DateTimeOffset?)null)
+                .SetProperty(o => o.CompletedAt, (DateTimeOffset?)null), ct);
+
+        if (updated == 0)
+            return Conflict("Заказ уже повторяется.");
+
+        await db.Jobs
+            .Where(j => j.OrderId == id && (j.Status == JobStatus.Failed || j.Status == JobStatus.Cancelled))
+            .ExecuteUpdateAsync(s => s.SetProperty(j => j.Status, JobStatus.Replaced), ct);
+
+        await transaction.CommitAsync(ct);
+
+        return Results.Accepted($"/print/orders/{id}");
     }
 
     private static async Task<IResult> ListMyOrders(
