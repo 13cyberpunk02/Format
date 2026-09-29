@@ -7,3 +7,29 @@ services:
     volumes:
       - ./cups-dev/in:/in                      # сюда кладём файлы для печати
       - ./cups-dev/out:/var/spool/cups-pdf/out # сюда cups-pdf складывает «напечатанное»
+  
+  postgres:
+    image: postgres:17
+    container_name: format-postgres
+    environment:
+      POSTGRES_USER: format
+      POSTGRES_PASSWORD: format_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    container_name: format-seaweedfs
+    command: mini -dir=/data -s3.config=/etc/seaweedfs/s3config.json -bucket=drawings
+    ports:
+      - "8333:8333"   # S3 API
+      - "8888:8888"   # веб-интерфейс filer: можно посмотреть файлы в браузере
+    volumes:
+      - seaweed:/data
+      - ./seaweedfs/s3config.json:/etc/seaweedfs/s3config.json:ro
+    
+volumes:
+  pgdata:
+  seaweed:

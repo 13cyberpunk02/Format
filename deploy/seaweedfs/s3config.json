@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "format-storage",
+      "credentials": [
+        {
+          "accessKey": "format_dev",
+          "secretKey": "format_dev_secret_key"
+        }
+      ],
+      "actions": ["Read", "Write", "List"]
+    }
+  ]
+}

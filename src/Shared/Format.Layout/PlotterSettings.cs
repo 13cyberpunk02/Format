@@ -6,7 +6,7 @@ public sealed record PlotterSettings
     public double RollWidth { get; init; } = 914;
 
     /// <summary>Непечатаемое поле плоттера с каждого края по ширине рулона, мм.</summary>
-    public double SideMargin { get; init; } = 0;
+    public double SideMargin { get; init; } = 3;
     
     /// <summary>Зазор между двумя чертежами на одном листе (под рез), мм.</summary>
     public double Gap { get; init; } = 0;

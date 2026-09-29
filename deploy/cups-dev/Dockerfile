@@ -4,7 +4,7 @@ FROM debian:bookworm-slim
 # printer-driver-cups-pdf - виртуальный PDF-принтер, poppler-utils - утилита pdfinfo для проверки
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      cups cups-client cups-filters printer-driver-cups-pdf poppler-utils \
+      cups cups-client cups-filters cups-ipp-utils printer-driver-cups-pdf poppler-utils \
  && rm -rf /var/lib/apt/lists/*
 
 # Разрешаем подключаться к CUPS не только изнутри контейнера (только для разработки!)
@@ -20,7 +20,7 @@ RUN mkdir -p /var/spool/cups-pdf/out && chmod 777 /var/spool/cups-pdf/out \
  && sed -i 's|^#\?AnonDirName .*|AnonDirName /var/spool/cups-pdf/out|' /etc/cups/cups-pdf.conf
 
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 EXPOSE 631
 ENTRYPOINT ["/entrypoint.sh"]
