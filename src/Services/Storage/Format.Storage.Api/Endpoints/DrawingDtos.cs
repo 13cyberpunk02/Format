@@ -39,4 +39,6 @@ public sealed record FormatDto(
     string Printer,
     bool IsPrintable,
     string? Reason);
+
+public sealed record LookupRequest(IReadOnlyList<Guid>? Ids);
     

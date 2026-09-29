@@ -16,6 +16,7 @@ public static class DrawingEndpoints
         var group = app.MapGroup("/drawings");
 
         group.MapPost("/", Upload).DisableAntiforgery();
+        group.MapPost("/lookup", Lookup);
         group.MapGet("/", List);
         group.MapGet("/formats", GetFormats);
         group.MapGet("/{id:guid}", GetById);
@@ -116,6 +117,27 @@ public static class DrawingEndpoints
         return Results.Created(
             $"/drawings/uploads/{uploadId}",
             new UploadResultDto(uploadId, created.Select(DrawingDto.From).ToList(), rejected));
+    }
+    
+    /// <summary>Сведения о нескольких чертежах одним запросом. Отсутствующие просто не попадут в ответ.</summary>
+    private static async Task<IResult> Lookup(LookupRequest request, StorageDbContext db, CancellationToken ct)
+    {
+        var ids = request.Ids?.Distinct().ToList() ?? [];
+
+        if (ids.Count > 500)
+            return Results.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Слишком много чертежей в одном запросе (максимум 500).");
+
+        if (ids.Count == 0)
+            return Results.Ok(Array.Empty<DrawingDto>());
+
+        var drawings = await db.Drawings
+            .AsNoTracking()
+            .Where(d => ids.Contains(d.Id))
+            .ToListAsync(ct);
+
+        return Results.Ok(drawings.Select(DrawingDto.From).ToList());
     }
 
     /// <summary>Настоящий PDF всегда начинается с "%PDF-". Проверяем содержимое, а не расширение файла.</summary>

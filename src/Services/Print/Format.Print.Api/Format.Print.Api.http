@@ -1,0 +1,48 @@
+﻿@auth = http://localhost:5169
+@storage = http://localhost:5133
+@print = http://localhost:5134
+
+### Вход
+POST {{auth}}/auth/login
+Content-Type: application/json
+
+{ "email": "admin@company.ru", "password": "Admin_dev_123" }
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Последний загруженный комплект
+GET {{storage}}/drawings?pageSize=1
+Authorization: Bearer {{token}}
+
+> {% client.global.set("uploadId", response.body.items[0].uploadId); %}
+
+### Все его страницы — собираем заказ по 1 копии
+GET {{storage}}/drawings/uploads/{{uploadId}}
+Authorization: Bearer {{token}}
+
+> {%
+    const items = response.body.map(d => ({ drawingId: d.id, copies: 1 }));
+    client.global.set("items1", JSON.stringify(items));
+    client.global.set("items2", JSON.stringify(items.map(i => ({ ...i, copies: 2 }))));
+%}
+
+### Предпросмотр: весь комплект по 1 копии
+POST {{print}}/print/preview
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "items": {{items1}} }
+
+### Предпросмотр: весь комплект по 2 копии
+POST {{print}}/print/preview
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "items": {{items2}} }
+
+### Несуществующий чертёж — 400 со списком
+POST {{print}}/print/preview
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "items": [ { "drawingId": "00000000-0000-0000-0000-000000000001", "copies": 1 } ] }
