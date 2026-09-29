@@ -1,11 +1,26 @@
 ﻿using System.Globalization;
+using System.Net.Http.Headers;
 using Format.Layout;
 using Microsoft.Extensions.Options;
 
 namespace Format.Print.Api.Cups;
 
+/// <summary>Состояния задания по IPP (job-state).</summary>
+public static class CupsJobStates
+{
+    public const int Pending = 3, Held = 4, Processing = 5, Stopped = 6, Canceled = 7, Aborted = 8, Completed = 9;
+}
+
+public sealed record CupsJobState(int State, IReadOnlyList<string> Reasons, string? PrinterMessage)
+{
+    public bool IsFinal => State >= CupsJobStates.Canceled;
+}
+
 public sealed class CupsClient(HttpClient http, IOptions<CupsOptions> options, ILogger<CupsClient> logger)
 {
+    private const ushort StatusNotPossible = 0x0404;
+    private const ushort StatusNotFound = 0x0406;
+
     private static int _lastRequestId;
     private readonly CupsOptions _options = options.Value;
 
@@ -15,7 +30,6 @@ public sealed class CupsClient(HttpClient http, IOptions<CupsOptions> options, I
     {
         var jobOptions = new Dictionary<string, string>(_options.Plotter.JobOptions)
         {
-            // Размер куска рулона: ширина рулона × длина листа
             ["media"] = string.Create(CultureInfo.InvariantCulture,
                 $"Custom.{Math.Round(sheet.Width)}x{Math.Round(sheet.Length)}mm"),
         };
@@ -29,17 +43,52 @@ public sealed class CupsClient(HttpClient http, IOptions<CupsOptions> options, I
     {
         var jobOptions = new Dictionary<string, string>(_options.Office.JobOptions)
         {
-            ["media"] = format.Name, // "A4" или "A3"
+            ["media"] = format.Name,
         };
 
         return PrintAsync(_options.Office.Queue, jobName, pdf, copies, jobOptions, ct);
+    }
+
+    /// <summary>Состояние задания. null - CUPS такого задания не знает (история очищена).</summary>
+    public async Task<CupsJobState?> GetJobStateAsync(int jobId, CancellationToken ct)
+    {
+        var ipp = await SendAsync("jobs", JobRequest(IppOperation.GetJobAttributes, jobId), document: null, ct);
+
+        if (ipp.StatusCode == StatusNotFound)
+            return null;
+
+        EnsureSuccess(ipp, $"Не удалось получить состояние задания {jobId}");
+
+        var state = ipp.Get("job-state") as int?
+            ?? throw new CupsException($"CUPS не сообщил состояние задания {jobId}.");
+
+        var reasons = ipp.GetAll("job-state-reasons")
+            .OfType<string>()
+            .Where(r => r != "none")
+            .ToList();
+
+        return new CupsJobState(state, reasons, ipp.Get("job-printer-state-message") as string);
+    }
+
+    /// <summary>Отменить задание. false - отменять уже нечего: задание завершено или не найдено.</summary>
+    public async Task<bool> CancelJobAsync(int jobId, CancellationToken ct)
+    {
+        var ipp = await SendAsync("jobs", JobRequest(IppOperation.CancelJob, jobId), document: null, ct);
+
+        if (ipp.StatusCode is StatusNotFound or StatusNotPossible)
+            return false;
+
+        EnsureSuccess(ipp, $"Не удалось отменить задание {jobId}");
+
+        logger.LogInformation("Задание {JobId} отменено в CUPS", jobId);
+        return true;
     }
 
     private async Task<int> PrintAsync(
         string queue, string jobName, Stream pdf, int copies,
         IReadOnlyDictionary<string, string> jobOptions, CancellationToken ct)
     {
-        var writer = new IppWriter(IppOperation.PrintJob, Interlocked.Increment(ref _lastRequestId))
+        var writer = new IppWriter(IppOperation.PrintJob, NextRequestId())
             .Group(IppTag.OperationGroup)
             .String(IppTag.Charset, "attributes-charset", "utf-8")
             .String(IppTag.NaturalLanguage, "attributes-natural-language", "ru")
@@ -53,19 +102,9 @@ public sealed class CupsClient(HttpClient http, IOptions<CupsOptions> options, I
         foreach (var (name, value) in jobOptions)
             writer.String(IppTag.Keyword, name, value);
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"printers/{queue}")
-        {
-            Content = new IppContent(writer.Build(), pdf),
-        };
+        var ipp = await SendAsync($"printers/{queue}", writer.Build(), pdf, ct);
 
-        using var response = await http.SendAsync(request, ct);
-        response.EnsureSuccessStatusCode();
-
-        var ipp = IppResponse.Parse(await response.Content.ReadAsByteArrayAsync(ct));
-
-        if (!ipp.IsSuccess)
-            throw new CupsException(
-                $"CUPS отклонил задание в очередь {queue}: 0x{ipp.StatusCode:X4} {ipp.Get("status-message")}");
+        EnsureSuccess(ipp, $"CUPS отклонил задание в очередь {queue}");
 
         var jobId = ipp.Get("job-id") as int?
             ?? throw new CupsException("CUPS не вернул номер задания.");
@@ -75,4 +114,35 @@ public sealed class CupsClient(HttpClient http, IOptions<CupsOptions> options, I
 
         return jobId;
     }
+
+    /// <summary>Запрос, который касается одного задания: состояние или отмена.</summary>
+    private byte[] JobRequest(ushort operation, int jobId) =>
+        new IppWriter(operation, NextRequestId())
+            .Group(IppTag.OperationGroup)
+            .String(IppTag.Charset, "attributes-charset", "utf-8")
+            .String(IppTag.NaturalLanguage, "attributes-natural-language", "ru")
+            .String(IppTag.Uri, "job-uri", $"ipp://{http.BaseAddress!.Authority}/jobs/{jobId}")
+            .String(IppTag.Name, "requesting-user-name", _options.UserName)
+            .Build();
+
+    private async Task<IppResponse> SendAsync(string path, byte[] header, Stream? document, CancellationToken ct)
+    {
+        HttpContent content = document is null
+            ? new ByteArrayContent(header) { Headers = { ContentType = new MediaTypeHeaderValue("application/ipp") } }
+            : new IppContent(header, document);
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = content };
+        using var response = await http.SendAsync(request, ct);
+        response.EnsureSuccessStatusCode();
+
+        return IppResponse.Parse(await response.Content.ReadAsByteArrayAsync(ct));
+    }
+
+    private static void EnsureSuccess(IppResponse ipp, string what)
+    {
+        if (!ipp.IsSuccess)
+            throw new CupsException($"{what}: 0x{ipp.StatusCode:X4} {ipp.Get("status-message")}");
+    }
+
+    private static int NextRequestId() => Interlocked.Increment(ref _lastRequestId);
 }

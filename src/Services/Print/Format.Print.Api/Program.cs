@@ -34,8 +34,10 @@ builder.Services.AddSingleton<LayoutPlanner>();
 builder.Services.AddSingleton<SheetComposer>();
 builder.Services.AddScoped<OrderProcessor>();
 builder.Services.AddHostedService<PrintQueueWorker>();
+builder.Services.AddScoped<JobTracker>();
+builder.Services.AddHostedService<JobTrackingWorker>();
 
-// Сервис хранения — от имени пользователя
+// Сервис хранения - от имени пользователя
 builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));
 builder.Services.AddTransient<ForwardUserTokenHandler>();
 builder.Services

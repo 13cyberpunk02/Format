@@ -37,6 +37,7 @@ public sealed class PrintDbContext(DbContextOptions<PrintDbContext> options) : D
         job.Property(j => j.Status).HasConversion<string>().HasMaxLength(32);
         job.Property(j => j.Printer).HasMaxLength(32);
         job.Property(j => j.Description).HasMaxLength(500);
+        job.Property(j => j.StateMessage).HasMaxLength(500);
         job.Property(j => j.Error).HasMaxLength(2000);
         job.HasIndex(j => j.Status);
 

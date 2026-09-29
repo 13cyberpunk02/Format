@@ -29,7 +29,7 @@ public sealed class Drawing
     /// <summary>Идентификатор пользователя из токена (sub).</summary>
     public Guid UploadedById { get; init; }
 
-    /// <summary>Имя на момент загрузки — чтобы показывать в списке, не обращаясь к сервису авторизации.</summary>
+    /// <summary>Имя на момент загрузки - чтобы показывать в списке, не обращаясь к сервису авторизации.</summary>
     public required string UploadedByName { get; init; }
 
     public DateTimeOffset UploadedAt { get; init; }

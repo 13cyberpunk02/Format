@@ -24,6 +24,9 @@ public sealed class PrintJob
     /// <summary>Для людей: «Лист 3 из 12: A3x4 + A2, 1189 мм».</summary>
     public required string Description { get; init; }
 
+    /// <summary>Что сейчас происходит с незавершённым заданием: «Media empty», «printer-stopped».</summary>
+    public string? StateMessage { get; set; }
+    
     public int Copies { get; init; }
 
     public JobStatus Status { get; set; }

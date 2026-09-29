@@ -16,7 +16,7 @@ Authorization: Bearer {{token}}
 
 > {% client.global.set("uploadId", response.body.items[0].uploadId); %}
 
-### Все его страницы — собираем заказ по 1 копии
+### Все его страницы - собираем заказ по 1 копии
 GET {{storage}}/drawings/uploads/{{uploadId}}
 Authorization: Bearer {{token}}
 
@@ -40,7 +40,7 @@ Content-Type: application/json
 
 { "items": {{items2}} }
 
-### Несуществующий чертёж — 400 со списком
+### Несуществующий чертёж - 400 со списком
 POST {{print}}/print/preview
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -72,10 +72,14 @@ Content-Type: application/json
 
 > {% client.global.set("userToken", response.body.accessToken); %}
 
-### Иванов смотрит заказ администратора — 403
+### Иванов смотрит заказ администратора - 403
 GET {{print}}/print/orders/{{orderId}}
 Authorization: Bearer {{userToken}}
 
-### Иванов смотрит свои заказы — пусто
+### Иванов смотрит свои заказы - пусто
 GET {{print}}/print/orders
 Authorization: Bearer {{userToken}}
+
+### Отмена заказа
+POST {{print}}/print/orders/{{orderId}}/cancel
+Authorization: Bearer {{token}}

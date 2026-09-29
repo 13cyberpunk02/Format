@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Format.Layout;
+using Format.Print.Api.Cups;
 using Format.Print.Api.Data;
 using Format.Print.Api.Storage;
 using Format.Security;
@@ -24,6 +25,7 @@ public static class PrintEndpoints
 
         group.MapPost("/preview", Preview);
         group.MapPost("/orders", CreateOrder);
+        group.MapPost("/orders/{id:guid}/cancel", CancelOrder);
         group.MapGet("/orders", ListMyOrders);
         group.MapGet("/orders/{id:guid}", GetOrder);
 
@@ -90,21 +92,24 @@ public static class PrintEndpoints
             TotalRollLengthMm = resolved.Plan.TotalRollLength,
             SheetCount = resolved.Plan.Sheets.Count,
             OfficeJobCount = resolved.Plan.OfficeJobs.Count,
-            Items = resolved.Items.Select((item, index) =>
-            {
-                var drawing = resolved.Drawings[item.DrawingId];
-                return new PrintOrderItem
+            Items =
+            [
+                .. resolved.Items.Select((item, index) =>
                 {
-                    Id = Guid.NewGuid(),
-                    OrderId = orderId,
-                    Position = index,
-                    DrawingId = item.DrawingId,
-                    FileName = drawing.FileName,
-                    PageNumber = drawing.PageNumber,
-                    Format = drawing.Format,
-                    Copies = item.Copies,
-                };
-            }).ToList(),
+                    var drawing = resolved.Drawings[item.DrawingId];
+                    return new PrintOrderItem
+                    {
+                        Id = Guid.NewGuid(),
+                        OrderId = orderId,
+                        Position = index,
+                        DrawingId = item.DrawingId,
+                        FileName = drawing.FileName,
+                        PageNumber = drawing.PageNumber,
+                        Format = drawing.Format,
+                        Copies = item.Copies,
+                    };
+                })
+            ],
         };
 
         db.Orders.Add(order);
@@ -200,7 +205,78 @@ public static class PrintEndpoints
 
         return (new ResolvedRequest(items, drawings, plan), null);
     }
+    
+    private static async Task<IResult> CancelOrder(
+        Guid id,
+        ClaimsPrincipal user,
+        PrintDbContext db,
+        CupsClient cups,
+        Spool spool,
+        TimeProvider time,
+        CancellationToken ct)
+    {
+        var order = await db.Orders
+            .Include(o => o.Jobs)
+            .FirstOrDefaultAsync(o => o.Id == id, ct);
 
+        if (order is null)
+            return Results.NotFound();
+
+        if (order.CreatedById != user.GetUserId() && !user.IsAdmin())
+            return Results.Problem(statusCode: StatusCodes.Status403Forbidden, title: "Это чужой заказ.");
+
+        var now = time.GetUtcNow();
+
+        switch (order.Status)
+        {
+            case OrderStatus.Queued:
+            {
+                // Условный UPDATE: обработчик мог забрать заказ в эту же долю секунды
+                var updated = await db.Orders
+                    .Where(o => o.Id == id && o.Status == OrderStatus.Queued)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(o => o.Status, OrderStatus.Cancelled)
+                        .SetProperty(o => o.CompletedAt, (DateTimeOffset?)now), ct);
+
+                if (updated == 0)
+                    return Conflict("Заказ уже начал отправляться на печать. Попробуйте отменить через несколько секунд.");
+
+                spool.DeleteOrder(id);
+                return Results.NoContent();
+            }
+
+            case OrderStatus.Processing:
+                return Conflict("Заказ сейчас отправляется на печать. Попробуйте отменить через несколько секунд.");
+
+            case OrderStatus.Printing:
+            {
+                foreach (var job in order.Jobs.Where(j => j.Status == JobStatus.Pending))
+                {
+                    var cancelled = await cups.CancelJobAsync(job.CupsJobId, ct);
+
+                    job.Status = cancelled ? JobStatus.Cancelled : JobStatus.Completed;
+                    job.CompletedAt = now;
+                    job.StateMessage = null;
+                }
+
+                order.Status = order.Jobs.Any(j => j.Status == JobStatus.Cancelled)
+                    ? OrderStatus.Cancelled
+                    : OrderStatus.Completed;
+                order.CompletedAt = now;
+
+                await db.SaveChangesAsync(ct);
+                spool.DeleteOrder(id);
+
+                return Results.NoContent();
+            }
+
+            default:
+                return Conflict("Заказ уже завершён.");
+        }
+    }
+
+    private static IResult Conflict(string title) =>
+        Results.Problem(statusCode: StatusCodes.Status409Conflict, title: title);
     private static IResult BadRequest(string title) =>
         Results.Problem(statusCode: StatusCodes.Status400BadRequest, title: title);
 }

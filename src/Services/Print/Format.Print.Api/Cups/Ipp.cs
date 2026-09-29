@@ -27,6 +27,8 @@ internal static class IppTag
 internal static class IppOperation
 {
     public const ushort PrintJob = 0x0002;
+    public const ushort CancelJob = 0x0008;
+    public const ushort GetJobAttributes = 0x0009;
 }
 
 /// <summary>Собирает двоичный IPP-запрос.</summary>
@@ -103,6 +105,9 @@ internal sealed class IppResponse
         StatusCode = statusCode;
         Attributes = attributes;
     }
+    
+    public IEnumerable<object> GetAll(string name) =>
+        Attributes.Where(a => a.Name == name).Select(a => a.Value);
 
     public ushort StatusCode { get; }
     public IReadOnlyList<IppAttribute> Attributes { get; }
