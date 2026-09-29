@@ -1,13 +1,27 @@
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Format.Auth.Api.Data;
 using Format.Auth.Api.Endpoints;
 using Format.Auth.Api.Tokens;
+using Format.Auth.Api.Users;
+using Format.Security;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+
+builder.Services.AddFormatAuthentication(builder.Configuration);
+builder.Services
+    .AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<JwtSigningKey>((jwt, key) => jwt.TokenValidationParameters.IssuerSigningKey = key.SecurityKey);
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.Configure<UserPolicyOptions>(builder.Configuration.GetSection("Users"));
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options
@@ -57,7 +71,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseRateLimiter();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapAuthEndpoints();
+app.MapUserEndpoints();
 
 app.Run();

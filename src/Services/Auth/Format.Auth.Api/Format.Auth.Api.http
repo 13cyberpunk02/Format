@@ -1,28 +1,83 @@
-﻿@host = http://localhost:5169
+﻿@auth = http://localhost:5169
 
 ### Вход администратора
-POST {{host}}/auth/login
+POST {{auth}}/auth/login
+Content-Type: application/json
+
+{ "email": "admin@company.ru", "password": "Admin_dev_123" }
+
+> {% client.global.set("adminToken", response.body.accessToken); %}
+
+### О себе
+GET {{auth}}/auth/me
+Authorization: Bearer {{adminToken}}
+
+### Создать пользователя
+POST {{auth}}/auth/users
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-  "email": "Admin@Company.ru ",
-  "password": "Admin_dev_123"
+  "email": "ivanov@company.ru",
+  "displayName": "Иванов Иван Иванович",
+  "password": "ivanov_dev_123"
 }
 
-### Неверный пароль
-POST {{host}}/auth/login
+> {% client.global.set("userId", response.body.id); %}
+
+### Та же почта ещё раз — 409
+POST {{auth}}/auth/users
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
-{
-  "email": "admin@company.ru",
-  "password": "wrong"
-}
+{ "email": "Ivanov@company.ru", "displayName": "Дубль", "password": "whatever_123" }
 
-### Несуществующая почта
-POST {{host}}/auth/login
+### Чужой домен — 400
+POST {{auth}}/auth/users
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
-{
-  "email": "nobody@company.ru",
-  "password": "whatever"
-}
+{ "email": "someone@gmail.com", "displayName": "Посторонний", "password": "whatever_123" }
+
+### Список пользователей
+GET {{auth}}/auth/users
+Authorization: Bearer {{adminToken}}
+
+### Вход пользователя
+POST {{auth}}/auth/login
+Content-Type: application/json
+
+{ "email": "ivanov@company.ru", "password": "ivanov_dev_123" }
+
+> {% client.global.set("userToken", response.body.accessToken); %}
+
+### Пользователь пытается смотреть список — 403
+GET {{auth}}/auth/users
+Authorization: Bearer {{userToken}}
+
+### Администратор пытается разжаловать себя — 400
+PATCH {{auth}}/auth/users/{{adminId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "role": "User" }
+
+### Заблокировать пользователя
+PATCH {{auth}}/auth/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "status": "Disabled" }
+
+### Заблокированный пытается войти — 403
+POST {{auth}}/auth/login
+Content-Type: application/json
+
+{ "email": "ivanov@company.ru", "password": "ivanov_dev_123" }
+
+### Разблокировать
+PATCH {{auth}}/auth/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "status": "Active" }

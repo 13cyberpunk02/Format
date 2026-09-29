@@ -1,5 +1,8 @@
-﻿using Format.Auth.Api.Data;
+﻿using System.Security.Claims;
+using Format.Auth.Api.Data;
 using Format.Auth.Api.Tokens;
+using Format.Auth.Api.Users;
+using Format.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -7,6 +10,7 @@ using Microsoft.Extensions.Options;
 namespace Format.Auth.Api.Endpoints;
 
 public sealed record LoginRequest(string? Email, string? Password);
+public sealed record ChangePasswordRequest(string? CurrentPassword, string? NewPassword);
 
 public sealed record UserDto(Guid Id, string Email, string DisplayName, string Role)
 {
@@ -25,9 +29,12 @@ public static class AuthEndpoints
     {
         var group = app.MapGroup("/auth");
 
-        group.MapPost("/login", Login).RequireRateLimiting("login");
-        group.MapGet("/.well-known/openid-configuration", Discovery);
-        group.MapGet("/.well-known/jwks.json", Jwks);
+        group.MapPost("/login", Login).AllowAnonymous().RequireRateLimiting("login");
+        group.MapGet("/.well-known/openid-configuration", Discovery).AllowAnonymous();
+        group.MapGet("/.well-known/jwks.json", Jwks).AllowAnonymous();
+
+        group.MapGet("/me", GetMe);
+        group.MapPost("/me/password", ChangeOwnPassword).RequireRateLimiting("login");
 
         return app;
     }
@@ -99,4 +106,36 @@ public static class AuthEndpoints
         Results.Problem(
             statusCode: StatusCodes.Status401Unauthorized,
             title: "Неверная почта или пароль");
+    
+    private static async Task<IResult> GetMe(ClaimsPrincipal principal, AuthDbContext db, CancellationToken ct)
+    {
+        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == principal.GetUserId(), ct);
+
+        return user is null ? Results.NotFound() : Results.Ok(UserDto.From(user));
+    }
+
+    private static async Task<IResult> ChangeOwnPassword(
+        ChangePasswordRequest request,
+        ClaimsPrincipal principal,
+        AuthDbContext db,
+        IPasswordHasher<User> hasher,
+        CancellationToken ct)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == principal.GetUserId(), ct);
+        if (user is null)
+            return Results.NotFound();
+
+        if (string.IsNullOrEmpty(request.CurrentPassword) ||
+            hasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword) == PasswordVerificationResult.Failed)
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest, title: "Текущий пароль указан неверно.");
+
+        var error = UserRules.ValidatePassword(request.NewPassword, user.Email);
+        if (error is not null)
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest, title: error);
+
+        user.PasswordHash = hasher.HashPassword(user, request.NewPassword!);
+        await db.SaveChangesAsync(ct);
+
+        return Results.NoContent();
+    }
 }
