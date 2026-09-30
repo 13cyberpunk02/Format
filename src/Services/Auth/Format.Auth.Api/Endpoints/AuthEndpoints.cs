@@ -13,9 +13,9 @@ public sealed record LoginRequest(string? Email, string? Password);
 
 public sealed record ChangePasswordRequest(string? CurrentPassword, string? NewPassword);
 
-public sealed record UserDto(Guid Id, string Email, string DisplayName, string Role)
+public sealed record UserDto(Guid Id, string Email, string DisplayName, string Department, string Role)
 {
-    public static UserDto From(User u) => new(u.Id, u.Email, u.DisplayName, u.Role.ToString());
+    public static UserDto From(User u) => new(u.Id, u.Email, u.DisplayName, u.Department, u.Role.ToString());
 }
 
 public sealed record LoginResponse(string AccessToken, DateTimeOffset ExpiresAt, UserDto User);

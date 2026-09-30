@@ -1,0 +1,15 @@
+<main class="grid min-h-screen place-items-center p-10">
+  <div class="flex w-full max-w-md flex-col gap-4 rounded-card border border-line bg-surf-2 p-7">
+    <span class="font-serif text-title">Здравствуйте, {{ auth.user()?.displayName }}</span>
+    <span class="text-ink-5">
+          {{ auth.user()?.department || 'отдел не указан' }} · {{ auth.isAdmin() ? 'администратор' : 'сотрудник' }}
+        </span>
+
+    <button type="button" class="btn-ghost" (click)="checkApi()">Проверить запрос к API</button>
+    @if (apiResult(); as result) {
+      <span class="font-mono text-xs text-ink-4">{{ result }}</span>
+    }
+
+    <button type="button" class="btn-primary" (click)="auth.logout()">Выйти</button>
+  </div>
+</main>

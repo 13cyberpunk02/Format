@@ -46,4 +46,9 @@ public static class UserRules
         string.IsNullOrWhiteSpace(displayName) ? "Укажите ФИО." :
         displayName.Trim().Length > 200 ? "ФИО слишком длинное." :
         null;
+    
+    public static string? ValidateDepartment(string? department) =>
+        string.IsNullOrWhiteSpace(department) ? "Укажите отдел." :
+        department.Trim().Length > 200 ? "Название отдела слишком длинное." :
+        null;
 }

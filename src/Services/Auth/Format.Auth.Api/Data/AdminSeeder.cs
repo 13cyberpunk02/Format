@@ -9,6 +9,7 @@ public sealed class BootstrapAdminOptions
     public string Email { get; set; } = "";
     public string Password { get; set; } = "";
     public string DisplayName { get; set; } = "Администратор";
+    public string Department { get; set; } = "Администрирование";
 }
 
 /// <summary>Создаёт первого администратора, если в базе ещё нет ни одного пользователя.</summary>
@@ -38,6 +39,7 @@ public static class AdminSeeder
             Id = Guid.NewGuid(),
             Email = User.NormalizeEmail(options.Email),
             DisplayName = options.DisplayName,
+            Department = options.Department,
             Role = UserRole.Admin,
             Status = UserStatus.Active,
             CreatedAt = now,

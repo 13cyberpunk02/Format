@@ -16,6 +16,7 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options) : DbC
 
         user.Property(u => u.Email).HasMaxLength(254);
         user.Property(u => u.DisplayName).HasMaxLength(200);
+        user.Property(u => u.Department).HasMaxLength(200);
         user.Property(u => u.PasswordHash).HasMaxLength(512);
 
         // Перечисления храним строками: в базе видно "Admin", а не 1

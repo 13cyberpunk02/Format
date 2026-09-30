@@ -15,17 +15,18 @@ public sealed record AdminUserDto(
     Guid Id,
     string Email,
     string DisplayName,
+    string Department,
     UserRole Role,
     UserStatus Status,
     DateTimeOffset CreatedAt,
     DateTimeOffset? LastLoginAt)
 {
     public static AdminUserDto From(User u) =>
-        new(u.Id, u.Email, u.DisplayName, u.Role, u.Status, u.CreatedAt, u.LastLoginAt);
+        new(u.Id, u.Email, u.DisplayName, u.Department, u.Role, u.Status, u.CreatedAt, u.LastLoginAt);
 }
 
-public sealed record CreateUserRequest(string? Email, string? DisplayName, string? Password, UserRole? Role);
-public sealed record UpdateUserRequest(string? DisplayName, UserRole? Role, UserStatus? Status);
+public sealed record CreateUserRequest(string? Email, string? DisplayName, string? Department, string? Password, UserRole? Role);
+public sealed record UpdateUserRequest(string? DisplayName, string? Department, UserRole? Role, UserStatus? Status);
 public sealed record SetPasswordRequest(string? NewPassword);
 
 public static class UserEndpoints
@@ -63,8 +64,9 @@ public static class UserEndpoints
         var email = User.NormalizeEmail(request.Email ?? "");
 
         var error = UserRules.ValidateEmail(email, userOptions.Value)
-            ?? UserRules.ValidateDisplayName(request.DisplayName)
-            ?? UserRules.ValidatePassword(request.Password, email);
+                    ?? UserRules.ValidateDisplayName(request.DisplayName)
+                    ?? UserRules.ValidateDepartment(request.Department)
+                    ?? UserRules.ValidatePassword(request.Password, email);
 
         if (error is not null)
             return BadRequest(error);
@@ -78,6 +80,7 @@ public static class UserEndpoints
             Id = Guid.NewGuid(),
             Email = email,
             DisplayName = request.DisplayName!.Trim(),
+            Department = request.Department!.Trim(),
             Role = request.Role ?? UserRole.User,
             Status = UserStatus.Active, // создан администратором - активация не нужна
             CreatedAt = now,
@@ -125,6 +128,15 @@ public static class UserEndpoints
                 return BadRequest(error);
 
             user.DisplayName = request.DisplayName.Trim();
+        }
+        
+        if (request.Department is not null)
+        {
+            var error = UserRules.ValidateDepartment(request.Department);
+            if (error is not null)
+                return BadRequest(error);
+
+            user.Department = request.Department.Trim();
         }
 
         if (request.Role is { } role)

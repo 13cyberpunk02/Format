@@ -59,4 +59,7 @@ public static class FormatAuthentication
 
     public static bool IsAdmin(this ClaimsPrincipal user) =>
         user.IsInRole(AdminRole);
+    
+    public static string GetDepartment(this ClaimsPrincipal user) =>
+        user.FindFirstValue("department") ?? "";
 }

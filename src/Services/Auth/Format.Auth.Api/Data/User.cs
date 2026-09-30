@@ -11,6 +11,7 @@ public enum UserStatus
     /// <summary>Зарегистрировался, но не перешёл по ссылке из письма. Войти нельзя.</summary>
     PendingActivation,
     Active,
+
     /// <summary>Заблокирован администратором (например, уволен). Войти нельзя.</summary>
     Disabled,
 }
@@ -24,6 +25,9 @@ public sealed class User
 
     /// <summary>ФИО для отображения: «кто загрузил», «кто печатал».</summary>
     public required string DisplayName { get; set; }
+
+    /// <summary>Отдел: «Проектный отдел · АР». Показывается в интерфейсе и попадает в токен.</summary>
+    public string Department { get; set; } = "";
 
     /// <summary>Хэш пароля с солью. Сам пароль нигде не хранится.</summary>
     public string PasswordHash { get; set; } = "";

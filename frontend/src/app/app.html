@@ -1,0 +1,27 @@
+<main class="flex min-h-screen flex-col gap-7 bg-[radial-gradient(120%_90%_at_15%_10%,var(--acc-glow)_0%,var(--bg-2)_70%)] px-10 py-12">
+  <div class="flex flex-wrap items-center gap-3.5">
+    <div class="flex items-center gap-2.5">
+      <div class="grid size-[30px] place-items-center rounded-[9px] bg-acc font-serif text-[17px] text-on-acc">Ф</div>
+      <span class="font-serif text-[21px]">Формат</span>
+    </div>
+    <app-theme-switch />
+  </div>
+
+  <div class="flex max-w-[420px] flex-col gap-3">
+    <h1 class="font-serif text-display leading-tight font-normal tracking-tight">Печать чертежей<br />для своих</h1>
+    <p class="text-[15px] text-ink-5">Загрузите PDF и укажите число копий - формат и принтер сервис определит сам.</p>
+  </div>
+
+  <div class="flex max-w-[420px] flex-wrap gap-2.5">
+    <div class="flex flex-1 flex-col gap-0.5 rounded-tile border border-line bg-surf-3 px-4 py-3.5">
+      <span class="font-mono text-[19px] text-acc-t">TM-300</span>
+      <span class="text-meta text-ink-5">рулон 914 мм</span>
+    </div>
+    <div class="flex flex-1 flex-col gap-0.5 rounded-tile border border-line bg-surf-3 px-4 py-3.5">
+      <span class="font-mono text-[19px] text-acc-t">A4 → A0</span>
+      <span class="text-meta text-ink-5">формат определяется сам</span>
+    </div>
+  </div>
+
+  <button type="button" class="w-fit rounded-field bg-acc px-8 py-3.5 font-semibold text-on-acc">Войти</button>
+</main>

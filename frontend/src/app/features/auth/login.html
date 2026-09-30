@@ -1,0 +1,93 @@
+<section class="flex min-h-screen flex-wrap items-stretch">
+  <div
+    class="flex min-w-[300px] flex-[1_1_380px] flex-col justify-center gap-7 bg-[radial-gradient(120%_90%_at_15%_10%,var(--acc-glow)_0%,var(--bg-2)_70%)] px-10 py-12"
+  >
+    <div class="flex flex-wrap items-center gap-3.5">
+      <div class="flex items-center gap-2.5">
+        <div class="grid size-[30px] place-items-center rounded-[9px] bg-acc font-serif text-[17px] text-on-acc">Ф</div>
+        <span class="font-serif text-[21px]">Формат</span>
+      </div>
+      <app-theme-switch />
+    </div>
+
+    <div class="flex max-w-[420px] flex-col gap-3">
+      <h1 class="font-serif text-display leading-[1.15] font-normal tracking-tight">Печать чертежей<br />для своих</h1>
+      <p class="max-w-[360px] text-[15px] text-pretty text-ink-5">
+        Внутренний сервис печати: загрузите PDF и укажите число копий - формат, поворот и раскладку на рулоне
+        сервис подберёт сам.
+      </p>
+    </div>
+
+    <div class="flex max-w-[420px] flex-wrap gap-2.5">
+      <div class="flex flex-[1_1_120px] flex-col gap-0.5 rounded-tile border border-line bg-surf-3 px-4 py-3.5">
+        <span class="font-mono text-[19px] text-acc-t">TM-300</span>
+        <span class="text-meta text-ink-5">рулон 914 мм</span>
+      </div>
+      <div class="flex flex-[1_1_120px] flex-col gap-0.5 rounded-tile border border-line bg-surf-3 px-4 py-3.5">
+        <span class="font-mono text-[19px] text-acc-t">A4 → A0</span>
+        <span class="text-meta text-ink-5">формат определяется сам</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Правая часть: форма входа -->
+  <div class="flex min-w-[320px] flex-[1_1_420px] items-center justify-center bg-rail px-7 py-10">
+    <form
+      class="flex w-full max-w-[400px] flex-col gap-5 rounded-card border border-line bg-surf-3 p-7 shadow-card"
+      novalidate
+      (submit)="onSubmit($event)"
+    >
+      <div class="flex flex-col gap-1">
+        <h2 class="font-serif text-[25px] font-normal">Вход для сотрудников</h2>
+        <p class="text-[13px] text-ink-5">Рабочая почта и пароль от учётной записи сервиса.</p>
+      </div>
+
+      @if (serverError(); as message) {
+        <div class="flex gap-3 rounded-tile border border-warn-bd bg-warn-bg px-4 py-3" role="alert">
+          <span class="w-1 shrink-0 self-stretch rounded-full bg-warn"></span>
+          <span class="text-[13px] text-ink-2">{{ message }}</span>
+        </div>
+      }
+
+      <div class="flex flex-col gap-3">
+        @let emailField = loginForm.email();
+        <label class="flex flex-col gap-1.5">
+          <span class="text-meta text-ink-5">Рабочая почта</span>
+          <input
+            class="field"
+            type="email"
+            autocomplete="username"
+            placeholder="i.ivanov@company.ru"
+            [formField]="loginForm.email"
+            [attr.aria-invalid]="emailField.touched() && emailField.invalid()"
+          />
+          @if (emailField.touched() && emailField.invalid()) {
+            <span class="text-xs text-warn">{{ emailField.errors()[0]?.message }}</span>
+          }
+        </label>
+
+        @let passwordField = loginForm.password();
+        <label class="flex flex-col gap-1.5">
+          <span class="text-meta text-ink-5">Пароль</span>
+          <input
+            class="field"
+            type="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+            [formField]="loginForm.password"
+            [attr.aria-invalid]="passwordField.touched() && passwordField.invalid()"
+          />
+          @if (passwordField.touched() && passwordField.invalid()) {
+            <span class="text-xs text-warn">{{ passwordField.errors()[0]?.message }}</span>
+          }
+        </label>
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="busy()">
+        {{ busy() ? 'Входим…' : 'Войти' }}
+      </button>
+
+      <p class="text-center text-xs text-ink-6">Доступ только для сотрудников · сервис бесплатный</p>
+    </form>
+  </div>
+</section>

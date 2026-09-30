@@ -99,3 +99,17 @@ POST {{auth}}/auth/logout
 
 ### Продление после выхода - 401
 POST {{auth}}/auth/refresh
+
+### Отдел администратору (id — из GET /auth/me)
+PATCH {{auth}}/auth/users/{{adminId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "department": "Администрирование" }
+
+### Отдел Иванову
+PATCH {{auth}}/auth/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "department": "Проектный отдел · АР" }

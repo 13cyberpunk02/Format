@@ -30,6 +30,7 @@ public sealed class TokenService(JwtSigningKey key, IOptions<JwtOptions> options
                 [JwtRegisteredClaimNames.Sub] = user.Id.ToString(),
                 [JwtRegisteredClaimNames.Email] = user.Email,
                 [JwtRegisteredClaimNames.Name] = user.DisplayName,
+                ["department"] = user.Department,
                 ["role"] = user.Role.ToString(),
                 [JwtRegisteredClaimNames.Jti] = Guid.NewGuid().ToString(),
             },
