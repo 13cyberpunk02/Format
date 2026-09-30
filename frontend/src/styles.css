@@ -178,3 +178,15 @@
     cursor: pointer;
   }
 }
+
+@utility nav-item {
+  @apply flex w-full items-center justify-between gap-2.5 rounded-field px-[13px] py-2.5 text-ui font-medium text-ink-4 no-underline transition-colors;
+
+  &:hover {
+    @apply bg-surf-hover text-ink no-underline;
+  }
+
+  &[aria-current="page"] {
+    @apply bg-nav-active text-ink;
+  }
+}

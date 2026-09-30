@@ -1,0 +1,54 @@
+<div class="flex min-h-screen items-stretch">
+  @if (menuOpen()) {
+    <div class="fixed inset-0 z-30 bg-[rgba(0,0,0,0.5)] lg:hidden" (click)="menuOpen.set(false)"></div>
+  }
+
+  <aside
+    class="fixed inset-y-0 left-0 z-40 w-[260px] -translate-x-full border-r border-line-3 bg-rail transition-transform data-[open=true]:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:w-[244px] lg:shrink-0 lg:translate-x-0"
+    [attr.data-open]="menuOpen()"
+  >
+    <app-sidebar />
+  </aside>
+
+  <main class="flex min-w-0 flex-1 flex-col">
+    <header class="flex flex-wrap items-end justify-between gap-4 px-[30px] pt-[26px] pb-5">
+      <div class="flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          class="grid size-10 place-items-center rounded-field border border-line-2 text-ink-3 lg:hidden"
+          aria-label="Открыть меню"
+          (click)="menuOpen.set(true)"
+        >
+          ☰
+        </button>
+        <div class="flex min-w-0 flex-col gap-1">
+          <div class="text-meta text-ink-6">{{ header.crumb() }}</div>
+          <h1 class="truncate font-serif text-title leading-[1.15] font-normal tracking-[-0.005em]">
+            {{ header.title() }}
+          </h1>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2.5">
+        <app-theme-switch />
+        <button
+          type="button"
+          class="rounded-full border border-line-2 px-[15px] py-2.5 text-[13px] font-medium text-ink-2 transition-colors hover:bg-surf-hover"
+          (click)="rules().open()"
+        >
+          Правила печати
+        </button>
+        <a
+          routerLink="/new"
+          class="rounded-full bg-acc px-[18px] py-2.5 text-[13px] font-semibold text-on-acc no-underline hover:text-on-acc hover:no-underline"
+        >
+          Новое задание
+        </a>
+      </div>
+    </header>
+
+    <router-outlet />
+  </main>
+</div>
+
+<app-rules-dialog />

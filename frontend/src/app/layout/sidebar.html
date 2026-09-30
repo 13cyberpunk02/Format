@@ -1,0 +1,55 @@
+<div class="flex h-full flex-col gap-[26px] px-3.5 py-5">
+  <a routerLink="/" class="flex items-center gap-2.5 px-2 py-1 text-ink no-underline hover:text-ink hover:no-underline">
+    <div class="grid size-[30px] place-items-center rounded-[9px] bg-acc font-serif text-[17px] text-on-acc">Ф</div>
+    <div class="flex flex-col">
+      <span class="font-serif text-[17px] leading-tight">Формат</span>
+      <span class="text-2xs text-ink-6">внутренний сервис</span>
+    </div>
+  </a>
+
+  <nav class="flex flex-col gap-[3px]" aria-label="Основное меню">
+    @for (item of mainItems; track item.link) {
+      <a
+        class="nav-item"
+        [routerLink]="item.link"
+        routerLinkActive
+        ariaCurrentWhenActive="page"
+        [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+      >
+        {{ item.label }}
+      </a>
+    }
+  </nav>
+
+  @if (auth.isAdmin()) {
+    <nav class="flex flex-col gap-[3px]" aria-label="Администрирование">
+      <span class="px-[13px] pb-1 text-2xs tracking-wider text-ink-6 uppercase">Администрирование</span>
+      @for (item of adminItems; track item.link) {
+        <a class="nav-item" [routerLink]="item.link" routerLinkActive ariaCurrentWhenActive="page">
+          {{ item.label }}
+        </a>
+      }
+    </nav>
+  }
+
+  <div class="mt-auto flex flex-col gap-3">
+    <!-- Здесь будет состояние плоттера - на шаге 6 -->
+
+    <div class="flex items-center gap-2.5 px-2 py-1">
+      <a
+        routerLink="/profile"
+        class="flex min-w-0 flex-1 items-center gap-2.5 text-ink no-underline hover:text-ink hover:no-underline"
+        title="Профиль"
+      >
+        <span class="grid size-8 shrink-0 place-items-center rounded-full bg-line text-xs text-ink">{{ initials() }}</span>
+        <span class="flex min-w-0 flex-col">
+          <span class="truncate text-meta font-medium">{{ auth.user()?.displayName }}</span>
+          <span class="truncate text-2xs text-ink-6">{{ auth.user()?.department }}</span>
+        </span>
+      </a>
+      <button type="button" class="px-1 py-0.5 text-[11.5px] text-ink-6 hover:text-ink" (click)="auth.logout()">
+        выйти
+      </button>
+    </div>
+  </div>
+</div>

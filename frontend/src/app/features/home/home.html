@@ -1,15 +1,15 @@
-<main class="grid min-h-screen place-items-center p-10">
-  <div class="flex w-full max-w-md flex-col gap-4 rounded-card border border-line bg-surf-2 p-7">
-    <span class="font-serif text-title">Здравствуйте, {{ auth.user()?.displayName }}</span>
-    <span class="text-ink-5">
-          {{ auth.user()?.department || 'отдел не указан' }} · {{ auth.isAdmin() ? 'администратор' : 'сотрудник' }}
+<section class="flex flex-col gap-5 px-[30px] pb-11">
+  <a
+    routerLink="/new"
+    class="flex max-w-[560px] flex-col gap-3.5 rounded-card border border-line bg-[linear-gradient(155deg,var(--acc-soft-2)_0%,var(--surf-2)_65%)] p-6 text-ink no-underline hover:text-ink hover:no-underline"
+  >
+    <span class="grid size-10 place-items-center rounded-field bg-acc text-[19px] text-on-acc">+</span>
+    <span class="flex flex-col gap-1">
+          <span class="font-serif text-[22px]">Отправить чертёж в печать</span>
+          <span class="text-ui text-pretty text-ink-5">
+            Перетащите PDF - формат и принтер сервис подберёт сам. Останется указать копии.
+          </span>
         </span>
-
-    <button type="button" class="btn-ghost" (click)="checkApi()">Проверить запрос к API</button>
-    @if (apiResult(); as result) {
-      <span class="font-mono text-xs text-ink-4">{{ result }}</span>
-    }
-
-    <button type="button" class="btn-primary" (click)="auth.logout()">Выйти</button>
-  </div>
-</main>
+    <span class="text-[13px] text-acc-t">Открыть конфигуратор →</span>
+  </a>
+</section>
