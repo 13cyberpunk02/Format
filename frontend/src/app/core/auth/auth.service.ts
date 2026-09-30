@@ -74,4 +74,15 @@ export class AuthService {
   private start(response: LoginResponse): void {
     this.session.set({ token: response.accessToken, user: response.user });
   }
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await firstValueFrom(this.http.post('/api/auth/me/password', { currentPassword, newPassword }));
+  }
+
+  /** Закрыть все сессии, включая эту. */
+  async logoutEverywhere(): Promise<void> {
+    await firstValueFrom(this.http.post('/api/auth/me/logout-all', null));
+    this.session.set(null);
+    await this.router.navigateByUrl('/login');
+  }
 }

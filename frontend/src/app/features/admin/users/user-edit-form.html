@@ -1,0 +1,82 @@
+<form class="flex flex-col gap-3.5" novalidate (submit)="onSubmit($event)">
+  <div class="rounded-tile bg-surf-1 px-4 py-3 text-[13px] text-ink-5">
+    {{ user().email }}
+  </div>
+
+  @let nameField = userForm.displayName();
+  <label class="flex flex-col gap-1.5">
+    <span class="text-meta text-ink-5">ФИО</span>
+    <input class="field" [formField]="userForm.displayName" [attr.aria-invalid]="nameField.touched() && nameField.invalid()" />
+    @if (nameField.touched() && nameField.invalid()) {
+      <span class="text-xs text-warn">{{ nameField.errors()[0]?.message }}</span>
+    }
+  </label>
+
+  @let departmentField = userForm.department();
+  <label class="flex flex-col gap-1.5">
+    <span class="text-meta text-ink-5">Отдел</span>
+    <input
+      class="field"
+      [formField]="userForm.department"
+      [attr.aria-invalid]="departmentField.touched() && departmentField.invalid()"
+    />
+    @if (departmentField.touched() && departmentField.invalid()) {
+      <span class="text-xs text-warn">{{ departmentField.errors()[0]?.message }}</span>
+    }
+  </label>
+
+  <div class="flex flex-wrap gap-3">
+    <label class="flex min-w-[160px] flex-1 flex-col gap-1.5">
+      <span class="text-meta text-ink-5">Роль</span>
+      <select class="field disabled:opacity-60" [formField]="userForm.role">
+        <option value="User">Сотрудник</option>
+        <option value="Admin">Администратор</option>
+      </select>
+    </label>
+    <label class="flex min-w-[160px] flex-1 flex-col gap-1.5">
+      <span class="text-meta text-ink-5">Статус</span>
+      <select class="field disabled:opacity-60" [formField]="userForm.status">
+        <option value="Active">Активен</option>
+        <option value="Disabled">Заблокирован</option>
+        <option value="PendingActivation">Ожидает активации</option>
+      </select>
+    </label>
+  </div>
+  @if (isSelf()) {
+    <span class="-mt-2 text-xs text-ink-6">Свою роль и статус изменить нельзя - это защита от случайной потери доступа.</span>
+  }
+
+  <label class="flex flex-col gap-1.5">
+    <span class="flex items-baseline justify-between">
+      <span class="text-meta text-ink-5">Новый пароль</span>
+      <button type="button" class="text-xs text-acc-t hover:text-acc-hi" (click)="generate()">сгенерировать</button>
+    </span>
+    <input
+      #passwordInput
+      class="field font-mono"
+      autocomplete="off"
+      placeholder="оставьте пустым, чтобы не менять"
+      [value]="model().newPassword"
+      (input)="model.update((m) => ({ ...m, newPassword: passwordInput.value }))"
+      [attr.aria-invalid]="passwordError() !== null"
+    />
+    @if (passwordError(); as message) {
+      <span class="text-xs text-warn">{{ message }}</span>
+    } @else if (model().newPassword) {
+      <span class="text-xs text-ink-6">Пользователь выйдет со всех устройств и войдёт с новым паролем.</span>
+    }
+  </label>
+
+  @if (error(); as message) {
+    <div class="rounded-tile border border-warn-bd bg-warn-bg px-4 py-3 text-[13px] text-ink-2" role="alert">
+      {{ message }}
+    </div>
+  }
+
+  <div class="flex gap-2.5 pt-1">
+    <button type="button" class="btn-ghost flex-1" (click)="cancelled.emit()">Отмена</button>
+    <button type="submit" class="btn-primary flex-1" [disabled]="busy()">
+      {{ busy() ? 'Сохраняем…' : 'Сохранить' }}
+    </button>
+  </div>
+</form>

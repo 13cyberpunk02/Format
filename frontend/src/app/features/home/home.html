@@ -1,15 +1,117 @@
 <section class="flex flex-col gap-5 px-[30px] pb-11">
-  <a
-    routerLink="/new"
-    class="flex max-w-[560px] flex-col gap-3.5 rounded-card border border-line bg-[linear-gradient(155deg,var(--acc-soft-2)_0%,var(--surf-2)_65%)] p-6 text-ink no-underline hover:text-ink hover:no-underline"
-  >
-    <span class="grid size-10 place-items-center rounded-field bg-acc text-[19px] text-on-acc">+</span>
-    <span class="flex flex-col gap-1">
-          <span class="font-serif text-[22px]">Отправить чертёж в печать</span>
-          <span class="text-ui text-pretty text-ink-5">
-            Перетащите PDF - формат и принтер сервис подберёт сам. Останется указать копии.
-          </span>
+  <!-- Первый ряд: главное действие и сводка -->
+  <div class="flex flex-wrap items-stretch gap-4">
+    <a
+      routerLink="/new"
+      class="flex min-w-[280px] flex-[1_1_320px] flex-col gap-3.5 rounded-card border border-line bg-[linear-gradient(155deg,var(--acc-soft-2)_0%,var(--surf-2)_65%)] p-6 text-ink no-underline hover:text-ink hover:no-underline"
+    >
+      <span class="grid size-10 place-items-center rounded-field bg-acc text-[19px] text-on-acc">+</span>
+      <span class="flex flex-col gap-1">
+        <span class="font-serif text-[22px]">Отправить чертёж в печать</span>
+        <span class="text-ui text-pretty text-ink-5">
+          Перетащите PDF - формат и принтер сервис подберёт сам. Останется указать копии.
         </span>
-    <span class="text-[13px] text-acc-t">Открыть конфигуратор →</span>
-  </a>
+      </span>
+      <span class="text-[13px] text-acc-t">Открыть конфигуратор →</span>
+    </a>
+
+    <div class="flex min-w-[240px] flex-[1_1_260px] flex-col gap-3">
+      @for (stat of stats(); track stat.label) {
+        <div class="flex flex-1 items-center justify-between gap-3 rounded-panel border border-line bg-surf-2 px-[18px] py-4">
+          <div class="flex flex-col gap-0.5">
+            <span class="text-[13px] text-ink-5">{{ stat.label }}</span>
+            <span class="text-xs text-ink-6">{{ stat.note }}</span>
+          </div>
+          <span class="font-mono text-[23px]" [class]="stat.accent ? 'text-acc-t' : 'text-ink'">{{ stat.value }}</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Второй ряд: задания и цех -->
+  <div class="flex flex-wrap items-start gap-4">
+    <div class="min-w-[300px] flex-[1_1_400px] overflow-hidden rounded-card border border-line bg-surf-2">
+      <div class="flex items-baseline justify-between gap-3 border-b border-line-3 px-5 py-4">
+        <span class="font-serif text-heading">Мои задания</span>
+        <a routerLink="/orders" class="text-meta">все задания</a>
+      </div>
+
+      @if (recent.hasValue()) {
+        @for (order of recent.value().items; track order.id) {
+          <a
+            class="flex items-center gap-3.5 border-t border-line-4 px-5 py-[15px] text-ink no-underline first:border-t-0 hover:bg-surf-hover hover:text-ink hover:no-underline"
+            [routerLink]="['/orders', order.id]"
+          >
+            <span class="paper-grid h-11 w-[34px] shrink-0 rounded-md"></span>
+            <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span class="truncate text-sm font-medium">{{ order.title || 'Без названия' }}</span>
+              <span class="text-xs text-ink-6">
+                {{ orderLabel(order.number) }} · {{ order.sheetCount }} л. · {{ formatDateTime(order.createdAt) }}
+              </span>
+            </span>
+            <app-status-chip [status]="order.status" />
+          </a>
+        } @empty {
+          <div class="px-5 py-10 text-center text-[13px] text-ink-6">Заданий пока нет - самое время отправить первое.</div>
+        }
+      } @else {
+        <div class="px-5 py-10 text-center text-[13px] text-ink-6">Загружаем…</div>
+      }
+    </div>
+
+    <div class="flex min-w-[260px] max-w-[360px] flex-[1_1_280px] flex-col gap-4">
+      <div class="flex flex-col gap-4 rounded-card border border-line bg-surf-2 p-5">
+        <span class="font-serif text-heading">Цех сейчас</span>
+
+        @if (printStatus.status.hasValue()) {
+          @for (printer of printStatus.status.value().printers; track printer.key) {
+            <div class="flex flex-col gap-1.5">
+              <div class="flex items-baseline justify-between gap-2.5">
+                <span class="text-ui font-medium">{{ printer.name }}</span>
+                <span
+                  class="text-xs"
+                  [class]="isProblem(printer.state) ? 'text-warn' : printer.state === 'Printing' ? 'text-acc-t' : 'text-ink-6'"
+                >
+                  {{ stateLabels[printer.state] }}
+                </span>
+              </div>
+              <div class="h-[5px] overflow-hidden rounded-full bg-line">
+                @if (printer.state === 'Printing') {
+                  <div class="h-full w-full animate-barmove rounded-full bg-[repeating-linear-gradient(115deg,var(--acc-d)_0_10px,var(--acc)_10px_20px)] bg-size-[28px_100%]"></div>
+                } @else if (isProblem(printer.state)) {
+                  <div class="h-full w-full rounded-full bg-warn"></div>
+                } @else {
+                  <div class="h-full w-[8%] rounded-full bg-bar-idle"></div>
+                }
+              </div>
+              @if (printer.message && isProblem(printer.state)) {
+                <span class="text-xs text-warn">{{ translate(printer.message) }}</span>
+              }
+            </div>
+          }
+
+          @let queue = printStatus.status.value().queue;
+          <span class="font-mono text-xs text-ink-5">
+            в очереди {{ queue.waiting }} · печатается {{ queue.printing }}
+          </span>
+        } @else if (printStatus.status.error()) {
+          <span class="text-[13px] text-warn">Не удалось узнать состояние принтеров.</span>
+        } @else {
+          <span class="text-[13px] text-ink-6">Загружаем…</span>
+        }
+      </div>
+
+      @if (printStatus.status.hasValue() && printStatus.status.value().pickup; as pickup) {
+        <div class="flex flex-col gap-2 rounded-card border border-line bg-surf-2 p-5">
+          <span class="font-serif text-heading">Где забрать</span>
+          <span class="text-[13px] leading-relaxed text-ink-5">
+            {{ pickup.location }}
+            @if (pickup.hours) {
+              <br />{{ pickup.hours }}
+            }
+          </span>
+        </div>
+      }
+    </div>
+  </div>
 </section>

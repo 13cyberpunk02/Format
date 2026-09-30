@@ -18,6 +18,14 @@ public sealed class PrintOrder
 
     public Guid CreatedById { get; init; }
     public required string CreatedByName { get; init; }
+    
+    /// <summary>Порядковый номер для людей: «ПЧ-1001». Выдаёт база при сохранении.</summary>
+    public long Number { get; init; }
+
+    /// <summary>Название заказа. Если пользователь не указал - по имени первого файла.</summary>
+    public required string Title { get; set; }
+
+    public string CreatedByDepartment { get; init; } = "";
     public DateTimeOffset CreatedAt { get; init; }
 
     /// <summary>Оценка по раскладке в момент заказа - для списка заказов.</summary>

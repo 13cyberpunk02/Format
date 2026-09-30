@@ -1,14 +1,5 @@
-import { httpResource } from '@angular/common/http';
-import { Component, ElementRef, signal, viewChild } from '@angular/core';
-
-interface FormatInfo {
-  name: string;
-  shortSide: number;
-  longSide: number;
-  printer: 'plotter' | 'office';
-  isPrintable: boolean;
-  reason: string | null;
-}
+import {Component, ElementRef, inject, signal, viewChild} from '@angular/core';
+import {FormatsService} from '../../core/formats.service';
 
 @Component({
   selector: 'app-rules-dialog',
@@ -16,16 +7,12 @@ interface FormatInfo {
 })
 export class RulesDialog {
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+  private readonly formatsService = inject(FormatsService);
 
-  /** Список форматов загружается при первом открытии окна, не раньше. */
-  private readonly wasOpened = signal(false);
-
-  protected readonly formats = httpResource<FormatInfo[]>(() =>
-    this.wasOpened() ? '/api/drawings/formats' : undefined,
-  );
+  protected readonly formats = this.formatsService.resource;
 
   open(): void {
-    this.wasOpened.set(true);
+    this.formatsService.load();
     this.dialog().nativeElement.showModal();
   }
 
@@ -33,7 +20,6 @@ export class RulesDialog {
     this.dialog().nativeElement.close();
   }
 
-  /** Клик по затемнённому фону (мимо содержимого) закрывает окно. */
   protected onDialogClick(event: MouseEvent): void {
     if (event.target === this.dialog().nativeElement) {
       this.close();

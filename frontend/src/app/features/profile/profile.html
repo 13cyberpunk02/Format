@@ -1,0 +1,92 @@
+<section class="flex flex-wrap items-start gap-[18px] px-[30px] pb-11">
+  <!-- Учётная запись -->
+  <div class="flex min-w-[280px] flex-[1_1_340px] flex-col gap-5 rounded-card border border-line bg-surf-2 p-[22px]">
+    @if (me.hasValue()) {
+      @let user = me.value();
+      <div class="flex items-center gap-4">
+        <span class="grid size-14 shrink-0 place-items-center rounded-full bg-acc font-serif text-xl text-on-acc">
+          {{ initials() }}
+        </span>
+        <div class="flex min-w-0 flex-col gap-0.5">
+          <span class="font-serif text-[22px] leading-tight">{{ user.displayName }}</span>
+          <span class="truncate text-[13px] text-ink-5">{{ user.email }}</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2 text-[13px] text-ink-5">
+        <div class="flex justify-between gap-3">
+          <span>Отдел</span><span class="text-right text-ink">{{ user.department || '-' }}</span>
+        </div>
+        <div class="flex justify-between gap-3">
+          <span>Роль</span><span class="text-ink">{{ roleLabels[user.role] }}</span>
+        </div>
+      </div>
+
+      <div class="flex gap-2.5">
+        <span class="w-1 shrink-0 self-stretch rounded-full bg-acc-bd-strong"></span>
+        <span class="text-meta leading-relaxed text-ink-5">Изменить ФИО или отдел может администратор сервиса.</span>
+      </div>
+    } @else if (me.error()) {
+      <span class="text-[13px] text-warn">Не удалось загрузить профиль.</span>
+    } @else {
+      <span class="text-[13px] text-ink-6">Загружаем…</span>
+    }
+  </div>
+
+  <div class="flex min-w-[280px] max-w-[440px] flex-[1_1_340px] flex-col gap-4">
+    <!-- Смена пароля -->
+    <div class="flex flex-col gap-4 rounded-card border border-line bg-surf-2 p-[22px]">
+      <span class="font-serif text-heading">Смена пароля</span>
+
+      @if (passwordChanged()) {
+        <div class="flex flex-col gap-3 rounded-tile border border-acc-bd-2 bg-acc-soft px-4 py-3.5">
+          <span class="text-[13px] text-ink-2">
+            Пароль изменён. Все остальные сеансы завершены - на других устройствах нужно будет войти заново.
+          </span>
+          <button type="button" class="self-start text-xs font-medium text-acc-t" (click)="passwordChanged.set(false)">
+            Сменить ещё раз
+          </button>
+        </div>
+      } @else {
+        <app-change-password-form (changed)="passwordChanged.set(true)" />
+      }
+    </div>
+
+    <!-- Сеансы -->
+    <div class="flex flex-col gap-3 rounded-card border border-line bg-surf-2 p-[22px]">
+      <span class="font-serif text-heading">Сеансы</span>
+      <span class="text-[13px] leading-relaxed text-ink-5">
+        Если вы входили с чужого компьютера или потеряли ноутбук - завершите все сеансы. Выйти придётся и здесь.
+      </span>
+
+      @if (logoutError(); as message) {
+        <span class="text-xs text-warn" role="alert">{{ message }}</span>
+      }
+
+      @if (confirmingLogoutAll()) {
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="btn-ghost flex-1 py-2.5 text-[13px]"
+            [disabled]="logoutBusy()"
+            (click)="confirmingLogoutAll.set(false)"
+          >
+            Отмена
+          </button>
+          <button
+            type="button"
+            class="flex-1 rounded-field bg-warn py-2.5 text-[13px] font-semibold text-bg disabled:opacity-60"
+            [disabled]="logoutBusy()"
+            (click)="logoutEverywhere()"
+          >
+            {{ logoutBusy() ? 'Завершаем…' : 'Да, выйти везде' }}
+          </button>
+        </div>
+      } @else {
+        <button type="button" class="btn-ghost text-[13px]" (click)="confirmingLogoutAll.set(true)">
+          Выйти на всех устройствах
+        </button>
+      }
+    </div>
+  </div>
+</section>

@@ -19,18 +19,22 @@ public static class PrintEndpoints
         Dictionary<Guid, StorageDrawing> Drawings,
         PrintPlan Plan);
 
+    public sealed record AdminQueueDto(IReadOnlyList<OrderDto> Active, IReadOnlyList<OrderDto> Failed);
+    
     public static IEndpointRouteBuilder MapPrintEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/print");
-        var admin = app.MapGroup("/print/admin").RequireAuthorization(FormatAuthentication.AdminPolicy);
         
-        admin.MapGet("/orders", ListAllOrders);
         group.MapPost("/preview", Preview);
         group.MapPost("/orders", CreateOrder);
         group.MapPost("/orders/{id:guid}/cancel", CancelOrder);
         group.MapGet("/orders", ListMyOrders);
         group.MapGet("/orders/{id:guid}", GetOrder);
         group.MapPost("/orders/{id:guid}/retry", RetryOrder);
+        
+        var admin = app.MapGroup("/print/admin").RequireAuthorization(FormatAuthentication.AdminPolicy);
+        admin.MapGet("/queue", GetQueue);
+        admin.MapGet("/orders", ListAllOrders);
 
         return app;
     }
@@ -40,19 +44,39 @@ public static class PrintEndpoints
         CancellationToken ct,
         int page = 1,
         int pageSize = 50,
-        OrderStatus? status = null,
-        Guid? userId = null)
+        OrderStatus[]? status = null,
+        Guid? userId = null,
+        string? search = null)
     {
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
         var query = db.Orders.AsNoTracking();
 
-        if (status is not null)
-            query = query.Where(o => o.Status == status);
+        if (status is { Length: > 0 })
+            query = query.Where(o => status.Contains(o.Status));
 
         if (userId is not null)
             query = query.Where(o => o.CreatedById == userId);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            var digits = term.StartsWith("ПЧ-", StringComparison.OrdinalIgnoreCase) ? term[3..] : term;
+
+            if (long.TryParse(digits, out var number))
+            {
+                query = query.Where(o => o.Number == number);
+            }
+            else
+            {
+                var pattern = $"%{term}%";
+                query = query.Where(o =>
+                    EF.Functions.ILike(o.Title, pattern) ||
+                    EF.Functions.ILike(o.CreatedByName, pattern) ||
+                    EF.Functions.ILike(o.CreatedByDepartment, pattern));
+            }
+        }
 
         var total = await query.CountAsync(ct);
 
@@ -64,6 +88,36 @@ public static class PrintEndpoints
             .ToListAsync(ct);
 
         return Results.Ok(new PagedResult<OrderDto>([.. orders.Select(OrderDto.From)], total, page, pageSize));
+    }
+    
+    private static async Task<IResult> GetQueue(PrintDbContext db, TimeProvider time, CancellationToken ct)
+    {
+        var active = await db.Orders
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(o => o.Items)
+            .Include(o => o.Jobs)
+            .Where(o => o.Status == OrderStatus.Queued
+                        || o.Status == OrderStatus.Processing
+                        || o.Status == OrderStatus.Printing)
+            .OrderBy(o => o.CreatedAt)
+            .ToListAsync(ct);
+
+        var weekAgo = time.GetUtcNow().AddDays(-7);
+
+        var failed = await db.Orders
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(o => o.Items)
+            .Include(o => o.Jobs)
+            .Where(o => o.Status == OrderStatus.Failed && o.CompletedAt >= weekAgo)
+            .OrderByDescending(o => o.CompletedAt)
+            .Take(20)
+            .ToListAsync(ct);
+
+        return Results.Ok(new AdminQueueDto(
+            [.. active.Select(OrderDto.From)],
+            [.. failed.Select(OrderDto.From)]));
     }
     
     private static async Task<IResult> Preview(
@@ -88,6 +142,10 @@ public static class PrintEndpoints
         var (resolved, error) = await ResolveAsync(request, storage, planner, ct);
         if (error is not null)
             return error;
+        
+        var title = string.IsNullOrWhiteSpace(request.Title) ? DefaultTitle(resolved!) : request.Title.Trim();
+        if (title.Length > 200)
+            return BadRequest("Название заказа слишком длинное (максимум 200 символов).");
 
         var orderId = Guid.NewGuid();
         Directory.CreateDirectory(spool.OrderDirectory(orderId));
@@ -122,6 +180,8 @@ public static class PrintEndpoints
             Status = OrderStatus.Queued,
             CreatedById = user.GetUserId(),
             CreatedByName = user.GetDisplayName(),
+            Title = title,
+            CreatedByDepartment = user.GetDepartment(),
             CreatedAt = time.GetUtcNow(),
             TotalRollLengthMm = resolved.Plan.TotalRollLength,
             SheetCount = resolved.Plan.Sheets.Count,
@@ -206,13 +266,17 @@ public static class PrintEndpoints
         PrintDbContext db,
         CancellationToken ct,
         int page = 1,
-        int pageSize = 20)
+        int pageSize = 20,
+        OrderStatus[]? status = null)
     {
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         var userId = user.GetUserId();
         var query = db.Orders.AsNoTracking().Where(o => o.CreatedById == userId);
+        
+        if (status is { Length: > 0 })
+            query = query.Where(o => status.Contains(o.Status));
 
         var total = await query.CountAsync(ct);
 
@@ -347,6 +411,21 @@ public static class PrintEndpoints
             default:
                 return Conflict("Заказ уже завершён.");
         }
+    }
+    
+    /// <summary>«Генплан» или «Генплан и ещё 2» - по именам файлов заказа.</summary>
+    private static string DefaultTitle(ResolvedRequest resolved)
+    {
+        var files = resolved.Items
+            .Select(i => resolved.Drawings[i.DrawingId].FileName)
+            .Distinct()
+            .ToList();
+
+        var first = Path.GetFileNameWithoutExtension(files[0]);
+        if (first.Length > 150)
+            first = first[..150];
+
+        return files.Count == 1 ? first : $"{first} и ещё {files.Count - 1}";
     }
 
     private static IResult Conflict(string title) =>

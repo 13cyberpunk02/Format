@@ -1,0 +1,74 @@
+<div
+  class="flex flex-col items-center gap-2.5 rounded-card border-[1.5px] border-dashed border-line-dash bg-surf-2 px-6 py-8 text-center transition-colors data-[dragging=true]:border-acc data-[dragging=true]:bg-acc-soft"
+  [attr.data-dragging]="dragging()"
+  (dragenter)="onDragEnter($event)"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave()"
+  (drop)="onDrop($event)"
+>
+  <div class="grid size-[42px] place-items-center rounded-[13px] bg-acc-soft text-[19px] text-acc-t">↑</div>
+  <div class="text-base font-semibold">Перетащите PDF или выберите</div>
+  <div class="text-[13px] leading-relaxed text-ink-6">
+    Многостраничный файл разделится на листы.<br />Формат и принтер сервис определит сам.
+  </div>
+  <button
+    type="button"
+    class="mt-1.5 rounded-full border border-acc-bd-strong px-[18px] py-2.5 text-ui font-medium text-acc-t"
+    (click)="fileInput.click()"
+  >
+    Выбрать файлы
+  </button>
+  <input #fileInput type="file" accept="application/pdf,.pdf" multiple class="hidden" (change)="onPick(fileInput)" />
+</div>
+
+@if (tasks().length > 0) {
+  <div class="flex flex-col gap-2">
+    @for (task of tasks(); track task.key) {
+      <div
+        class="flex flex-col gap-2 rounded-panel border px-4 py-3"
+        [class]="task.state === 'failed' ? 'border-warn-bd bg-warn-bg' : 'border-line bg-surf-2'"
+      >
+        <div class="flex items-baseline justify-between gap-3">
+          <span class="truncate text-ui font-medium">{{ task.name }}</span>
+          <span class="shrink-0 font-mono text-xs text-ink-6">{{ formatBytes(task.size) }}</span>
+        </div>
+
+        @switch (task.state) {
+          @case ('uploading') {
+            <div class="h-1.5 overflow-hidden rounded-full bg-line">
+              <div
+                class="h-full w-full animate-barmove rounded-full bg-[repeating-linear-gradient(115deg,var(--acc-d)_0_10px,var(--acc)_10px_20px)] bg-size-[28px_100%]"
+              ></div>
+            </div>
+            <span class="text-xs text-ink-5">Загружаем и проверяем листы…</span>
+          }
+          @case ('done') {
+            <span class="text-xs text-acc-t">
+              Добавлено в задание: {{ task.accepted }} {{ plural(task.accepted, 'лист', 'листа', 'листов') }}
+            </span>
+          }
+          @case ('failed') {
+            <span class="text-xs text-warn">{{ task.error }}</span>
+          }
+        }
+
+        @if (task.rejected.length > 0) {
+          <div class="flex flex-col gap-1 rounded-field bg-warn-chip px-3 py-2">
+            <span class="text-xs font-medium text-warn">
+              Не подошли: {{ task.rejected.length }} {{ plural(task.rejected.length, 'лист', 'листа', 'листов') }}
+            </span>
+            @for (page of task.rejected; track page.pageNumber) {
+              <span class="text-xs text-ink-4">Лист {{ page.pageNumber }}: {{ page.reason }}</span>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    @if (hasFinished()) {
+      <button type="button" class="self-end text-xs text-ink-6 hover:text-ink" (click)="clearFinished()">
+        Скрыть завершённые
+      </button>
+    }
+  </div>
+}

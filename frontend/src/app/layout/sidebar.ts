@@ -1,6 +1,9 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
+import { PrintStatusService } from '../core/print-status.service';
+import { translateCupsMessage } from '../shared/cups-messages';
+import { PRINTER_STATE_LABELS, isPrinterProblem } from '../shared/printer-state';
 
 interface NavItem {
   label: string;
@@ -15,6 +18,11 @@ interface NavItem {
 })
 export class Sidebar {
   protected readonly auth = inject(AuthService);
+
+  protected readonly printStatus = inject(PrintStatusService);
+  protected readonly stateLabels = PRINTER_STATE_LABELS;
+  protected readonly isProblem = isPrinterProblem;
+  protected readonly translate = translateCupsMessage;
 
   protected readonly mainItems: NavItem[] = [
     { label: 'Главная', link: '/', exact: true },

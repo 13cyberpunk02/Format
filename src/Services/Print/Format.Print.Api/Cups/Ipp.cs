@@ -29,6 +29,7 @@ internal static class IppOperation
     public const ushort PrintJob = 0x0002;
     public const ushort CancelJob = 0x0008;
     public const ushort GetJobAttributes = 0x0009;
+    public const ushort GetPrinterAttributes = 0x000B;
 }
 
 /// <summary>Собирает двоичный IPP-запрос.</summary>
@@ -55,6 +56,18 @@ internal sealed class IppWriter
         var bytes = Encoding.UTF8.GetBytes(value);
         WriteHeader(valueTag, name, (ushort)bytes.Length);
         _buffer.Write(bytes);
+        return this;
+    }
+    
+    /// <summary>Атрибут с несколькими значениями (1setOf): имя пишется только у первого.</summary>
+    public IppWriter Strings(byte valueTag, string name, params string[] values)
+    {
+        for (var i = 0; i < values.Length; i++)
+        {
+            var bytes = Encoding.UTF8.GetBytes(values[i]);
+            WriteHeader(valueTag, i == 0 ? name : "", (ushort)bytes.Length);
+            _buffer.Write(bytes);
+        }
         return this;
     }
 

@@ -38,6 +38,9 @@ builder.Services.AddScoped<JobTracker>();
 builder.Services.AddHostedService<JobTrackingWorker>();
 builder.Services.AddScoped<SpoolCleaner>();
 builder.Services.AddHostedService<SpoolCleanupWorker>();
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<PrinterStatusService>();
+builder.Services.Configure<PickupOptions>(builder.Configuration.GetSection("Pickup"));
 
 // Сервис хранения - от имени пользователя
 builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));
@@ -71,5 +74,6 @@ app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 app.MapPrintEndpoints();
+app.MapStatusEndpoints();
 
 app.Run();

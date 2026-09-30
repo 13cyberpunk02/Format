@@ -15,6 +15,9 @@ public sealed class CupsOptions
 public sealed class QueueOptions
 {
     public string Queue { get; set; } = "";
+    
+    /// <summary>Как принтер называется в интерфейсе: «Canon TM-300».</summary>
+    public string DisplayName { get; set; } = "";
 
     /// <summary>Опции, добавляемые к каждому заданию в эту очередь (InputSlot, CutMedia...).</summary>
     public Dictionary<string, string> JobOptions { get; set; } = new();

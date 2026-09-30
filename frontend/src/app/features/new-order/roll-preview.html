@@ -1,0 +1,80 @@
+<div class="max-h-[560px] overflow-y-auto rounded-panel bg-well px-4 pb-4">
+  <div class="sticky top-0 z-10 flex justify-between bg-well py-2 font-mono text-2xs text-ink-6">
+    <span>← рулон {{ rollWidth }} мм →</span>
+    <span>подача ↓</span>
+  </div>
+
+  <svg
+    class="block w-full"
+    role="img"
+    aria-label="Схема раскладки листов на рулоне"
+    [attr.viewBox]="'0 0 ' + rollWidth + ' ' + layout().height"
+  >
+    @for (item of layout().items; track item.sheet.index) {
+      <g [attr.transform]="'translate(0 ' + item.top + ')'">
+        <!-- Подпись листа над ним -->
+        <text x="0" y="-18" class="fill-ink-6 font-mono" font-size="30">
+          {{ item.sheet.index }} · {{ item.sheet.lengthMm }} мм · {{ kindLabels[item.sheet.kind] }}
+        </text>
+
+        <!-- Кусок рулона -->
+        <rect
+          x="0"
+          y="0"
+          [attr.width]="item.sheet.widthMm"
+          [attr.height]="item.sheet.lengthMm"
+          class="fill-surf-3 stroke-line-2"
+          stroke-width="1"
+          vector-effect="non-scaling-stroke"
+        />
+
+        <!-- Чертежи на нём -->
+        @for (placement of item.sheet.placements; track $index) {
+          <g class="cursor-pointer" (click)="select.emit(placement.drawingId)">
+            <rect
+              [attr.x]="placement.x"
+              [attr.y]="placement.y"
+              [attr.width]="placement.width"
+              [attr.height]="placement.height"
+              class="fill-paper stroke-paper-line data-[selected=true]:stroke-acc"
+              [attr.stroke-width]="placement.drawingId === selectedId() ? 3 : 1"
+              [attr.data-selected]="placement.drawingId === selectedId()"
+              vector-effect="non-scaling-stroke"
+            />
+            <text
+              [attr.x]="placement.x + placement.width / 2"
+              [attr.y]="placement.y + placement.height / 2"
+              class="fill-paper-ink font-mono"
+              font-size="34"
+              text-anchor="middle"
+              dominant-baseline="central"
+            >
+              {{ placement.format }}
+            </text>
+            <text
+              [attr.x]="placement.x + placement.width / 2"
+              [attr.y]="placement.y + placement.height / 2 + 40"
+              class="fill-paper-ink font-sans opacity-60"
+              font-size="24"
+              text-anchor="middle"
+              dominant-baseline="central"
+            >
+              лист {{ placement.pageNumber }}
+            </text>
+          </g>
+        }
+
+        <!-- Линия реза под листом -->
+        <line
+          x1="0"
+          [attr.y1]="item.sheet.lengthMm + 8"
+          [attr.x2]="rollWidth"
+          [attr.y2]="item.sheet.lengthMm + 8"
+          class="stroke-line-dash"
+          stroke-dasharray="10 8"
+          vector-effect="non-scaling-stroke"
+        />
+      </g>
+    }
+  </svg>
+</div>

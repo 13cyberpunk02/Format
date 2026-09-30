@@ -20,23 +20,19 @@ export const routes: Routes = [
       },
       {
         path: 'new',
-        loadComponent: placeholder,
-        data: { crumb: 'Черновик задания', title: 'Новое задание на печать', step: 4 },
+        loadComponent: () => import('./features/new-order/new-order').then((m) => m.NewOrder),
       },
       {
         path: 'orders',
-        loadComponent: placeholder,
-        data: { crumb: 'Мои заказы', title: 'Мои задания', step: 5 },
+        loadComponent: () => import('./features/orders/orders-list').then((m) => m.OrdersList),
       },
       {
         path: 'orders/:id',
-        loadComponent: placeholder,
-        data: { crumb: 'Заказ', title: 'Карточка задания', step: 5 },
+        loadComponent: () => import('./features/orders/order-card').then((m) => m.OrderCard),
       },
       {
         path: 'profile',
-        loadComponent: placeholder,
-        data: { crumb: 'Учётная запись', title: 'Профиль', step: 7 },
+        loadComponent: () => import('./features/profile/profile').then((m) => m.Profile),
       },
       {
         path: 'admin',
@@ -44,18 +40,16 @@ export const routes: Routes = [
         children: [
           {
             path: 'queue',
-            loadComponent: placeholder,
-            data: { crumb: 'Администрирование', title: 'Очередь цеха', step: 7 },
+            loadComponent: () => import('./features/admin/queue/queue').then((m) => m.Queue),
           },
           {
             path: 'orders',
-            loadComponent: placeholder,
-            data: { crumb: 'Администрирование', title: 'Все заказы', step: 7 },
+            loadComponent: () => import('./features/orders/orders-list').then((m) => m.OrdersList),
+            data: { scope: 'all' },
           },
           {
             path: 'users',
-            loadComponent: placeholder,
-            data: { crumb: 'Администрирование', title: 'Пользователи', step: 7 },
+            loadComponent: () => import('./features/admin/users/users-admin').then((m) => m.UsersAdmin),
           },
         ],
       },

@@ -6,10 +6,13 @@ public sealed record OrderItemDto(Guid DrawingId, string FileName, int PageNumbe
 
 public sealed record OrderDto(
     Guid Id,
+    long Number,
+    string Title,
     OrderStatus Status,
     DateTimeOffset CreatedAt,
     Guid CreatedById,
     string CreatedByName,
+    string CreatedByDepartment,
     double TotalRollLengthMm,
     int SheetCount,
     int OfficeJobCount,
@@ -20,7 +23,7 @@ public sealed record OrderDto(
     IReadOnlyList<JobDto> Jobs)
 {
     public static OrderDto From(PrintOrder o) => new(
-        o.Id, o.Status, o.CreatedAt, o.CreatedById, o.CreatedByName,
+        o.Id, o.Number, o.Title, o.Status, o.CreatedAt, o.CreatedById, o.CreatedByName, o.CreatedByDepartment,
         o.TotalRollLengthMm, o.SheetCount, o.OfficeJobCount,
         o.StartedAt, o.CompletedAt, o.Error,
         [
@@ -32,7 +35,7 @@ public sealed record OrderDto(
             .. o.Jobs
                 .OrderBy(j => j.CreatedAt)
                 .Select(j => new JobDto(j.CupsJobId, j.Printer, j.Description, j.Copies, j.Status, j.CreatedAt,
-                    j.CompletedAt, j.Error))
+                    j.CompletedAt, j.StateMessage + " "+ j.Error))
         ]);
 }
 

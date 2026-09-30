@@ -1,0 +1,146 @@
+<section class="flex flex-col gap-4 px-[30px] pb-11">
+  @if (error(); as message) {
+    <div class="rounded-tile border border-warn-bd bg-warn-bg px-4 py-3 text-[13px] text-ink-2" role="alert">{{ message }}</div>
+  }
+
+  @if (queue.error()) {
+    <div class="rounded-card border border-line bg-surf-2 px-6 py-10 text-center text-[13px] text-warn">
+      Не удалось загрузить очередь.
+    </div>
+  }
+
+  <div class="flex flex-wrap items-start gap-4">
+    <!-- Плоттер -->
+    <div class="min-w-[260px] flex-[1_1_280px] overflow-hidden rounded-card border border-line bg-surf-2">
+      @let plotterState = printers().plotter;
+      <div class="flex flex-col gap-0.5 border-b border-line-3 px-[18px] py-4">
+        <span class="font-serif text-heading">{{ plotterState?.name ?? 'Плоттер' }}</span>
+        <span class="text-meta" [class]="printerTone(plotterState)">
+          {{ plotterState ? stateLabels[plotterState.state] : '…' }}
+          · листов в работе {{ plotter().length }} · ждут отправки {{ waiting().length }}
+        </span>
+      </div>
+
+      <div class="flex flex-col gap-2.5 p-4">
+        @if (plotterState && isProblem(plotterState.state) && plotterState.message) {
+          <div class="flex gap-2.5 rounded-panel border border-warn-bd bg-warn-bg px-3.5 py-3">
+            <span class="w-1 shrink-0 self-stretch rounded-full bg-warn"></span>
+            <span class="text-[13px] text-ink-2">{{ translate(plotterState.message) }}</span>
+          </div>
+        }
+
+        @for (entry of plotter(); track entry.order.id; let first = $first) {
+          <a
+            class="flex flex-col gap-2 rounded-panel border p-3.5 text-ink no-underline hover:text-ink hover:no-underline"
+            [class]="first ? 'border-acc-bd-2 bg-acc-soft' : 'border-line bg-surf-1'"
+            [routerLink]="['/orders', entry.order.id]"
+          >
+            <div class="flex items-baseline justify-between gap-2.5">
+              <span class="truncate text-ui font-medium">
+                {{ orderLabel(entry.order.number) }} · {{ entry.order.title || 'без названия' }}
+              </span>
+              <span class="shrink-0 font-mono text-[11.5px] text-acc-t">{{ entry.jobs.length }} л.</span>
+            </div>
+            <span class="truncate text-xs text-ink-5">{{ entry.jobs[0].description }}</span>
+            @if (first) {
+              <div class="h-1.5 overflow-hidden rounded-full bg-line">
+                <div
+                  class="h-full w-full animate-barmove rounded-full bg-[repeating-linear-gradient(115deg,var(--acc-d)_0_10px,var(--acc)_10px_20px)] bg-size-[28px_100%]"
+                ></div>
+              </div>
+            }
+            @if (entry.jobs[0].stateMessage) {
+              <span class="text-xs text-warn">{{ translate(entry.jobs[0].stateMessage!) }}</span>
+            }
+            <span class="text-xs text-ink-6">
+              {{ entry.order.createdByName }} · {{ entry.order.createdByDepartment }}
+            </span>
+          </a>
+        }
+
+        @for (order of waiting(); track order.id) {
+          <a
+            class="flex items-baseline justify-between gap-2.5 rounded-panel border border-line bg-surf-1 p-3.5 text-ink no-underline hover:text-ink hover:no-underline"
+            [routerLink]="['/orders', order.id]"
+          >
+            <span class="truncate text-ui font-medium">{{ orderLabel(order.number) }} · {{ order.title || 'без названия' }}</span>
+            <span class="shrink-0 text-xs text-ink-6">{{ order.status === 'Processing' ? 'собирается' : 'в очереди' }}</span>
+          </a>
+        }
+
+        @if (plotter().length === 0 && waiting().length === 0) {
+          <div class="rounded-panel bg-well px-4 py-6 text-center text-[13px] text-ink-6">Очередь пуста</div>
+        }
+      </div>
+    </div>
+
+    <!-- Офисный принтер -->
+    <div class="min-w-[260px] flex-[1_1_280px] overflow-hidden rounded-card border border-line bg-surf-2">
+      @let officeState = printers().office;
+      <div class="flex flex-col gap-0.5 border-b border-line-3 px-[18px] py-4">
+        <span class="font-serif text-heading">{{ officeState?.name ?? 'Офисный принтер' }}</span>
+        <span class="text-meta" [class]="printerTone(officeState)">
+          {{ officeState ? stateLabels[officeState.state] : '…' }} · заданий {{ office().length }}
+        </span>
+      </div>
+
+      <div class="flex flex-col gap-2.5 p-4">
+        @if (officeState && isProblem(officeState.state) && officeState.message) {
+          <div class="flex gap-2.5 rounded-panel border border-warn-bd bg-warn-bg px-3.5 py-3">
+            <span class="w-1 shrink-0 self-stretch rounded-full bg-warn"></span>
+            <span class="text-[13px] text-ink-2">{{ translate(officeState.message) }}</span>
+          </div>
+        }
+
+        @for (entry of office(); track entry.order.id) {
+          <a
+            class="flex flex-col gap-1.5 rounded-panel border border-line bg-surf-1 p-3.5 text-ink no-underline hover:text-ink hover:no-underline"
+            [routerLink]="['/orders', entry.order.id]"
+          >
+            <div class="flex items-baseline justify-between gap-2.5">
+              <span class="truncate text-ui font-medium">{{ orderLabel(entry.order.number) }} · {{ entry.order.title || 'без названия' }}</span>
+              <span class="shrink-0 font-mono text-[11.5px] text-ink-6">{{ entry.jobs.length }} док.</span>
+            </div>
+            <span class="text-xs text-ink-6">{{ entry.order.createdByName }}</span>
+          </a>
+        } @empty {
+          <div class="rounded-panel bg-well px-4 py-6 text-center text-[13px] text-ink-6">Заданий нет</div>
+        }
+      </div>
+    </div>
+
+    <!-- Проблемы -->
+    <div class="min-w-[260px] flex-[1_1_280px] overflow-hidden rounded-card border border-line bg-surf-2">
+      <div class="flex flex-col gap-0.5 border-b border-line-3 px-[18px] py-4">
+        <span class="font-serif text-heading">Проблемы</span>
+        <span class="text-meta" [class]="failed().length > 0 ? 'text-warn' : 'text-ink-6'">
+          упавших за неделю: {{ failed().length }}
+        </span>
+      </div>
+
+      <div class="flex flex-col gap-2.5 p-4">
+        @for (order of failed(); track order.id) {
+          <div class="flex flex-col gap-2 rounded-panel border border-warn-bd bg-warn-bg p-3.5">
+            <a class="truncate text-ui font-medium text-ink no-underline hover:text-ink" [routerLink]="['/orders', order.id]">
+              {{ orderLabel(order.number) }} · {{ order.title || 'без названия' }}
+            </a>
+            <span class="text-xs leading-relaxed text-warn">{{ order.error }}</span>
+            <span class="text-xs text-ink-6">
+              {{ order.createdByName }} · {{ order.completedAt ? formatDateTime(order.completedAt) : '' }}
+            </span>
+            <button
+              type="button"
+              class="mt-1 rounded-field border border-line-2 bg-transparent py-2.5 text-meta text-ink-2 hover:bg-surf-hover disabled:opacity-50"
+              [disabled]="retrying() === order.id"
+              (click)="retry(order)"
+            >
+              {{ retrying() === order.id ? 'Отправляем…' : 'Повторить печать' }}
+            </button>
+          </div>
+        } @empty {
+          <div class="rounded-panel bg-well px-4 py-6 text-center text-[13px] text-ink-6">Всё в порядке</div>
+        }
+      </div>
+    </div>
+  </div>
+</section>

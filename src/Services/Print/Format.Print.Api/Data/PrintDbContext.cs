@@ -15,6 +15,14 @@ public sealed class PrintDbContext(DbContextOptions<PrintDbContext> options) : D
         order.Property(o => o.Status).HasConversion<string>().HasMaxLength(32);
         order.Property(o => o.CreatedByName).HasMaxLength(200);
         order.Property(o => o.Error).HasMaxLength(2000);
+        
+        order.Property(o => o.Number)
+            .UseIdentityByDefaultColumn()
+            .HasIdentityOptions(startValue: 1001);
+        order.HasIndex(o => o.Number).IsUnique();
+
+        order.Property(o => o.Title).HasMaxLength(200);
+        order.Property(o => o.CreatedByDepartment).HasMaxLength(200);
 
         // Для очереди: «самый старый заказ в статусе Queued»
         order.HasIndex(o => new { o.Status, o.CreatedAt });

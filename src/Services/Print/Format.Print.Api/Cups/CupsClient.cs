@@ -11,6 +11,18 @@ public static class CupsJobStates
     public const int Pending = 3, Held = 4, Processing = 5, Stopped = 6, Canceled = 7, Aborted = 8, Completed = 9;
 }
 
+public static class CupsPrinterStates
+{
+    public const int Idle = 3, Processing = 4, Stopped = 5;
+}
+
+public sealed record CupsPrinterState(
+    int State,
+    bool AcceptingJobs,
+    IReadOnlyList<string> Reasons,
+    string? Message,
+    int QueuedJobs);
+
 public sealed record CupsJobState(int State, IReadOnlyList<string> Reasons, string? PrinterMessage)
 {
     public bool IsFinal => State >= CupsJobStates.Canceled;
@@ -20,7 +32,8 @@ public sealed class CupsClient(HttpClient http, IOptions<CupsOptions> options, I
 {
     private const ushort StatusNotPossible = 0x0404;
     private const ushort StatusNotFound = 0x0406;
-
+    private const ushort StatusNotAcceptingJobs = 0x0506;
+    
     private static int _lastRequestId;
     private readonly CupsOptions _options = options.Value;
 
@@ -104,6 +117,11 @@ public sealed class CupsClient(HttpClient http, IOptions<CupsOptions> options, I
 
         var ipp = await SendAsync($"printers/{queue}", writer.Build(), pdf, ct);
 
+        if (ipp.StatusCode == StatusNotAcceptingJobs)
+            throw new CupsException(
+                "Принтер временно не принимает задания - возможно, идёт обслуживание. " +
+                "Повторите печать позже или обратитесь к администратору.");
+        
         EnsureSuccess(ipp, $"CUPS отклонил задание в очередь {queue}");
 
         var jobId = ipp.Get("job-id") as int?
@@ -113,6 +131,30 @@ public sealed class CupsClient(HttpClient http, IOptions<CupsOptions> options, I
             jobId, jobName, queue, copies);
 
         return jobId;
+    }
+    
+    public async Task<CupsPrinterState> GetPrinterStateAsync(string queue, CancellationToken ct)
+    {
+        var header = new IppWriter(IppOperation.GetPrinterAttributes, NextRequestId())
+            .Group(IppTag.OperationGroup)
+            .String(IppTag.Charset, "attributes-charset", "utf-8")
+            .String(IppTag.NaturalLanguage, "attributes-natural-language", "ru")
+            .String(IppTag.Uri, "printer-uri", $"ipp://{http.BaseAddress!.Authority}/printers/{queue}")
+            .String(IppTag.Name, "requesting-user-name", _options.UserName)
+            .Strings(IppTag.Keyword, "requested-attributes",
+                "printer-state", "printer-is-accepting-jobs", "printer-state-reasons",
+                "printer-state-message", "queued-job-count")
+            .Build();
+
+        var ipp = await SendAsync($"printers/{queue}", header, document: null, ct);
+        EnsureSuccess(ipp, $"Не удалось получить состояние принтера {queue}");
+
+        return new CupsPrinterState(
+            ipp.Get("printer-state") as int? ?? CupsPrinterStates.Stopped,
+            ipp.Get("printer-is-accepting-jobs") as bool? ?? false,
+            [.. ipp.GetAll("printer-state-reasons").OfType<string>().Where(r => r != "none")],
+            ipp.Get("printer-state-message") as string,
+            ipp.Get("queued-job-count") as int? ?? 0);
     }
 
     /// <summary>Запрос, который касается одного задания: состояние или отмена.</summary>

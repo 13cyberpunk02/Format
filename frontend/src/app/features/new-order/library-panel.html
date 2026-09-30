@@ -1,0 +1,90 @@
+<div class="flex flex-col gap-3 rounded-card border border-line bg-surf-2 p-4">
+  <div class="flex flex-wrap gap-2">
+    <form class="flex min-w-[200px] flex-1 gap-2" (submit)="$event.preventDefault(); applySearch(query.value)">
+      <input #query class="field py-2.5" type="search" placeholder="Поиск по имени файла" />
+      <button type="submit" class="btn-ghost shrink-0 py-2.5 text-[13px]">Найти</button>
+    </form>
+
+    <select #formatSelect class="field w-auto py-2.5" (change)="applyFormat(formatSelect.value)">
+      <option value="">Все форматы</option>
+      @for (item of formats.all(); track item.name) {
+        @if (item.isPrintable) {
+          <option [value]="item.name">{{ item.name }}</option>
+        }
+      }
+    </select>
+  </div>
+
+  @if (error(); as message) {
+    <span class="text-xs text-warn">{{ message }}</span>
+  }
+
+  @if (drawings.isLoading()) {
+    <div class="py-8 text-center text-[13px] text-ink-6">Загружаем…</div>
+  } @else if (drawings.error()) {
+    <div class="py-8 text-center text-[13px] text-warn">Не удалось загрузить список чертежей.</div>
+  } @else if (drawings.hasValue()) {
+    @let result = drawings.value();
+
+    @if (result.items.length === 0) {
+      <div class="py-8 text-center text-[13px] text-ink-6">Ничего не найдено.</div>
+    }
+
+    <div class="flex flex-col">
+      @for (drawing of result.items; track drawing.id) {
+        <div class="flex items-center gap-3 border-t border-line-4 py-2.5 first:border-t-0">
+          <app-sheet-thumb [widthMm]="drawing.widthMm" [heightMm]="drawing.heightMm" />
+
+          <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span class="truncate text-ui font-medium">{{ drawing.fileName }}</span>
+            <span class="truncate text-xs text-ink-6">
+              @if (drawing.pageCount > 1) {
+                лист {{ drawing.pageNumber }} из {{ drawing.pageCount }} ·
+              }
+              {{ drawing.uploadedByName }}
+            </span>
+          </div>
+
+          <span class="chip font-mono">{{ drawing.format }}</span>
+
+          <div class="flex shrink-0 flex-col items-end gap-1">
+            @if (draft.drawingIds().has(drawing.id)) {
+              <span class="text-xs text-acc-t">в задании</span>
+            } @else {
+              <button type="button" class="text-xs font-medium text-acc-t hover:text-acc-hi" (click)="draft.add([drawing])">
+                Добавить
+              </button>
+            }
+            @if (drawing.pageCount > 1) {
+              <button
+                type="button"
+                class="text-2xs text-ink-6 hover:text-ink disabled:opacity-50"
+                [disabled]="addingUpload() === drawing.uploadId"
+                (click)="addWholeUpload(drawing)"
+              >
+                весь комплект
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="flex items-center justify-between gap-3 border-t border-line-3 pt-3">
+        <button type="button" class="btn-ghost py-2 text-xs" [disabled]="page() === 1" (click)="page.set(page() - 1)">
+          ← Назад
+        </button>
+        <span class="font-mono text-xs text-ink-6">{{ page() }} / {{ totalPages() }}</span>
+        <button
+          type="button"
+          class="btn-ghost py-2 text-xs"
+          [disabled]="page() >= totalPages()"
+          (click)="page.set(page() + 1)"
+        >
+          Вперёд →
+        </button>
+      </div>
+    }
+  }
+</div>

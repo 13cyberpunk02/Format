@@ -1,0 +1,108 @@
+<div class="flex items-baseline justify-between px-1">
+  <span class="text-[13px] text-ink-5">Файлы задания</span>
+  @if (!draft.isEmpty()) {
+    <button type="button" class="text-xs text-ink-6 hover:text-warn" (click)="draft.clear()">очистить</button>
+  }
+</div>
+
+@if (draft.isEmpty()) {
+  <div class="rounded-panel border border-line-3 bg-well px-4 py-6 text-center text-[13px] text-ink-6">
+    Пока пусто - загрузите PDF или выберите из загруженных.
+  </div>
+}
+
+<div class="flex flex-col gap-2.5">
+  @for (group of draft.groups(); track group.uploadId) {
+    @if (group.pageCount === 1) {
+      <!-- Одностраничный файл: одна строка -->
+      @let item = group.items[0];
+      <div class="flex flex-wrap items-center gap-3 rounded-panel border border-line bg-surf-2 p-3">
+        <div class="flex min-w-[200px] flex-1 items-center gap-3">
+          <app-sheet-thumb [widthMm]="item.drawing.widthMm" [heightMm]="item.drawing.heightMm" />
+          <div class="flex min-w-0 flex-col gap-1">
+            <span class="truncate text-ui font-medium">{{ item.drawing.fileName }}</span>
+            <span class="flex flex-wrap gap-1.5">
+              <span class="chip font-mono">{{ item.drawing.format }}</span>
+              @if (deviceLabel(item.drawing.format); as device) {
+                <span class="chip">{{ device }}</span>
+              }
+            </span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-meta text-ink-6">копии</span>
+          <app-copies-stepper [value]="item.copies" (valueChange)="draft.setCopies(item.drawing.id, $event)" />
+          <button
+            type="button"
+            class="px-1.5 text-lg text-ink-6 hover:text-warn"
+            aria-label="Убрать из задания"
+            (click)="draft.remove(item.drawing.id)"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    } @else {
+      <!-- Комплект: заголовок и листы -->
+      @let isOpen = !collapsed().has(group.uploadId);
+      <div class="overflow-hidden rounded-panel border border-line bg-surf-2">
+        <div class="flex flex-wrap items-center gap-3 p-3">
+          <button
+            type="button"
+            class="flex min-w-[200px] flex-1 items-center gap-3 text-left"
+            [attr.aria-expanded]="isOpen"
+            (click)="toggle(group.uploadId)"
+          >
+            <span class="w-4 text-ink-6">{{ isOpen ? '▾' : '▸' }}</span>
+            <span class="flex min-w-0 flex-col gap-0.5">
+              <span class="truncate text-ui font-medium">{{ group.fileName }}</span>
+              <span class="text-xs text-ink-6">
+                в задании {{ group.items.length }} из {{ group.pageCount }}
+                {{ plural(group.pageCount, 'листа', 'листов', 'листов') }}
+              </span>
+            </span>
+          </button>
+          <div class="flex items-center gap-2">
+            <span class="text-meta text-ink-6">всем</span>
+            <app-copies-stepper
+              [value]="groupCopies(group)"
+              (valueChange)="draft.setCopiesForUpload(group.uploadId, $event)"
+            />
+            <button
+              type="button"
+              class="px-1.5 text-lg text-ink-6 hover:text-warn"
+              aria-label="Убрать комплект из задания"
+              (click)="draft.removeUpload(group.uploadId)"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        @if (isOpen) {
+          <div class="flex flex-col border-t border-line-3 bg-surf-1">
+            @for (item of group.items; track item.drawing.id) {
+              <div class="flex flex-wrap items-center gap-3 border-t border-line-4 px-3 py-2 pl-10 first:border-t-0">
+                <app-sheet-thumb [widthMm]="item.drawing.widthMm" [heightMm]="item.drawing.heightMm" />
+                <span class="min-w-[90px] flex-1 text-[13px] text-ink-3">лист {{ item.drawing.pageNumber }}</span>
+                <span class="chip font-mono">{{ item.drawing.format }}</span>
+                @if (deviceLabel(item.drawing.format); as device) {
+                  <span class="chip">{{ device }}</span>
+                }
+                <app-copies-stepper [value]="item.copies" (valueChange)="draft.setCopies(item.drawing.id, $event)" />
+                <button
+                  type="button"
+                  class="px-1.5 text-lg text-ink-6 hover:text-warn"
+                  aria-label="Убрать лист из задания"
+                  (click)="draft.remove(item.drawing.id)"
+                >
+                  ×
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

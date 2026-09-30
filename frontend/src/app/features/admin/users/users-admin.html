@@ -1,0 +1,114 @@
+<section class="flex flex-col gap-4 px-[30px] pb-11">
+  <div class="flex flex-wrap items-center gap-2.5">
+    <input
+      #search
+      class="field max-w-[340px] py-2.5"
+      type="search"
+      placeholder="Поиск по имени, почте или отделу"
+      (input)="query.set(search.value)"
+    />
+    @if (users.hasValue()) {
+      <span class="text-meta text-ink-6">{{ filtered().length }} из {{ users.value().length }}</span>
+    }
+    <button type="button" class="btn-primary ml-auto px-5 py-2.5 text-[13px]" (click)="openCreate()">
+      Добавить пользователя
+    </button>
+  </div>
+
+  @if (notice(); as n) {
+    <div class="flex flex-wrap items-center gap-3 rounded-tile border border-acc-bd-2 bg-acc-soft px-4 py-3" role="status">
+      <span class="text-[13px] text-ink-2">{{ n.text }}</span>
+      @if (n.password) {
+        <code class="rounded-field bg-surf-1 px-2.5 py-1 font-mono text-sm text-ink">{{ n.password }}</code>
+        <button type="button" class="text-xs font-medium text-acc-t" (click)="copy(n.password)">скопировать</button>
+      }
+      <button type="button" class="ml-auto text-xs text-ink-6 hover:text-ink" (click)="notice.set(null)">скрыть</button>
+    </div>
+  }
+
+  @if (rowError(); as message) {
+    <div class="rounded-tile border border-warn-bd bg-warn-bg px-4 py-3 text-[13px] text-ink-2" role="alert">{{ message }}</div>
+  }
+
+  <div class="overflow-hidden rounded-card border border-line bg-surf-2">
+    <div class="overflow-x-auto">
+      <div class="min-w-[860px]">
+        <div
+          class="grid grid-cols-[minmax(220px,1.6fr)_minmax(160px,1fr)_130px_140px_130px_170px] gap-3 border-b border-line-3 px-5 py-3.5 text-xs text-ink-6"
+        >
+          <span>Сотрудник</span><span>Отдел</span><span>Роль</span><span>Статус</span><span>Последний вход</span><span></span>
+        </div>
+
+        @if (users.error()) {
+          <div class="px-5 py-10 text-center text-[13px] text-warn">Не удалось загрузить пользователей.</div>
+        } @else if (!users.hasValue()) {
+          <div class="px-5 py-10 text-center text-[13px] text-ink-6">Загружаем…</div>
+        } @else {
+          @for (user of filtered(); track user.id) {
+            @let isSelf = user.id === currentUserId();
+            <div
+              class="grid grid-cols-[minmax(220px,1.6fr)_minmax(160px,1fr)_130px_140px_130px_170px] items-center gap-3 border-t border-line-4 px-5 py-3.5 first:border-t-0"
+              [class.opacity-60]="user.status === 'Disabled'"
+            >
+              <span class="flex min-w-0 flex-col">
+                <span class="truncate text-ui font-medium">
+                  {{ user.displayName }}
+                  @if (isSelf) {
+                    <span class="text-xs font-normal text-acc-t">· это вы</span>
+                  }
+                </span>
+                <span class="truncate text-xs text-ink-6">{{ user.email }}</span>
+              </span>
+              <span class="truncate text-[13px] text-ink-4">{{ user.department || '-' }}</span>
+              <span class="text-[13px]" [class]="user.role === 'Admin' ? 'text-acc-t' : 'text-ink-4'">
+                {{ roleLabels[user.role] }}
+              </span>
+              <span
+                class="justify-self-start rounded-full px-[11px] py-[5px] text-[11.5px]"
+                [class]="user.status === 'Active' ? 'bg-ok-bg text-acc-t' : user.status === 'Disabled' ? 'bg-warn-chip text-warn' : 'bg-chip text-ink-4'"
+              >
+                {{ statusLabels[user.status] }}
+              </span>
+              <span class="font-mono text-xs text-ink-5">
+                {{ user.lastLoginAt ? formatDateTime(user.lastLoginAt) : 'не входил' }}
+              </span>
+              <span class="flex justify-end gap-3 text-xs">
+                <button type="button" class="text-acc-t hover:text-acc-hi" (click)="openEdit(user)">изменить</button>
+                @if (!isSelf) {
+                  <button
+                    type="button"
+                    class="hover:text-ink disabled:opacity-50"
+                    [class]="user.status === 'Disabled' ? 'text-acc-t' : 'text-ink-6'"
+                    [disabled]="busyId() === user.id"
+                    (click)="toggleBlocked(user)"
+                  >
+                    {{ user.status === 'Disabled' ? 'разблокировать' : 'заблокировать' }}
+                  </button>
+                }
+              </span>
+            </div>
+          } @empty {
+            <div class="px-5 py-10 text-center text-[13px] text-ink-6">Никого не нашлось.</div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<app-modal #createModal title="Новый пользователь">
+  @if (createModal.isOpen()) {
+    <app-user-create-form (created)="onCreated($event)" (cancelled)="createModal.close()" />
+  }
+</app-modal>
+
+<app-modal #editModal title="Изменить пользователя">
+  @if (editModal.isOpen() && editing(); as user) {
+    <app-user-edit-form
+      [user]="user"
+      [isSelf]="user.id === currentUserId()"
+      (saved)="onSaved(user, $event.passwordChanged)"
+      (cancelled)="editModal.close()"
+    />
+  }
+</app-modal>

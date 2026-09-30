@@ -1,0 +1,168 @@
+@if (order.error()) {
+  <section class="px-[30px] pb-11">
+    <div class="flex flex-col items-center gap-3 rounded-card border border-line bg-surf-2 px-6 py-12 text-center">
+      <span class="font-serif text-heading">Задание не найдено</span>
+      <span class="text-[13px] text-ink-6">Возможно, это чужое задание или ссылка устарела.</span>
+      <a routerLink="/orders" class="text-[13px]">← К моим заданиям</a>
+    </div>
+  </section>
+} @else if (!order.hasValue()) {
+  <section class="px-[30px] pb-11 text-[13px] text-ink-6">Загружаем задание…</section>
+} @else {
+  @let o = order.value();
+
+  <section class="flex flex-wrap items-start gap-[18px] px-[30px] pb-11">
+    <!-- Левая колонка -->
+    <div class="flex min-w-[300px] flex-[1_1_420px] flex-col gap-4">
+      <!-- Ход выполнения -->
+      <div class="flex flex-col gap-[18px] rounded-card border border-line bg-surf-2 p-[22px]">
+        <span class="font-serif text-heading">Ход выполнения</span>
+        <div class="flex flex-col">
+          @for (step of timeline(); track step.label; let last = $last) {
+            <div class="flex items-start gap-3.5">
+              <div class="flex w-3 shrink-0 flex-col items-center self-stretch pt-1">
+                <div class="size-[11px] rounded-full border" [class]="dotStyles[step.state]"></div>
+                @if (!last) {
+                  <div class="min-h-[26px] w-px flex-1" [class]="step.state === 'done' ? 'bg-tl-line' : 'bg-line-3'"></div>
+                }
+              </div>
+              <div class="flex flex-col gap-0.5 pb-4">
+                <span class="text-ui font-medium" [class]="step.state === 'next' ? 'text-ink-6' : step.state === 'failed' ? 'text-warn' : 'text-ink'">
+                  {{ step.label }}
+                </span>
+                @if (step.time) {
+                  <span class="text-xs text-ink-6">{{ formatDateTime(step.time) }}</span>
+                }
+                @if (step.note) {
+                  <span class="text-xs leading-relaxed text-warn">{{ step.note }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Задания печати -->
+      @if (o.jobs.length > 0) {
+        <div class="overflow-hidden rounded-card border border-line bg-surf-2">
+          <div class="border-b border-line-3 px-5 py-4 font-serif text-heading">Задания печати</div>
+          @for (job of o.jobs; track job.cupsJobId) {
+            <div class="flex flex-col gap-2 border-t border-line-4 px-5 py-3.5 first:border-t-0" [class.opacity-50]="job.status === 'Replaced'">
+              <div class="flex flex-wrap items-baseline justify-between gap-3">
+                <span class="min-w-0 flex-1 text-[13px] text-ink-2">{{ job.description }}</span>
+                <span class="flex shrink-0 items-center gap-1.5">
+                  <span class="chip">{{ job.printer === 'office' ? 'принтер' : 'плоттер' }}</span>
+                  @if (job.copies > 1) {
+                    <span class="chip font-mono">×{{ job.copies }}</span>
+                  }
+                  <span class="text-xs" [class]="job.status === 'Failed' ? 'text-warn' : job.status === 'Completed' ? 'text-acc-t' : 'text-ink-6'">
+                    {{ jobLabels[job.status] }}
+                  </span>
+                </span>
+              </div>
+              @if (job.stateMessage) {
+                <div class="flex gap-2.5 rounded-field border border-warn-bd bg-warn-bg px-3 py-2">
+                  <span class="w-1 shrink-0 self-stretch rounded-full bg-warn"></span>
+                  <span class="text-xs text-ink-2">Плоттер сообщает: {{ translate(job.stateMessage) }}</span>
+                </div>
+              }
+              @if (job.error) {
+                <span class="text-xs text-warn">{{ job.error }}</span>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Файлы -->
+      <div class="overflow-hidden rounded-card border border-line bg-surf-2">
+        <div class="border-b border-line-3 px-5 py-4 font-serif text-heading">Файлы задания</div>
+        @if (fileError(); as message) {
+          <div class="border-b border-line-3 bg-warn-bg px-5 py-2.5 text-xs text-warn">{{ message }}</div>
+        }
+        @for (item of o.items; track item.drawingId) {
+          <div class="flex flex-wrap items-center gap-3.5 border-t border-line-4 px-5 py-3 first:border-t-0">
+            @if (formats.byName().get(item.format); as format) {
+              <app-sheet-thumb [widthMm]="format.shortSide" [heightMm]="format.longSide" />
+            }
+            <div class="flex min-w-[160px] flex-1 flex-col">
+              <span class="truncate text-ui font-medium">{{ item.fileName }}</span>
+              <span class="text-xs text-ink-6">
+                лист {{ item.pageNumber }} · {{ item.format }} · {{ item.copies }} экз.
+              </span>
+            </div>
+            <div class="flex gap-3 text-xs">
+              <button type="button" class="text-acc-t hover:text-acc-hi" (click)="view(item)">открыть</button>
+              <button type="button" class="text-acc-t hover:text-acc-hi" (click)="download(item)">скачать</button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Правая колонка -->
+    <div class="flex min-w-[260px] max-w-[340px] flex-[1_1_280px] flex-col gap-4">
+      <div
+        class="flex flex-col gap-3.5 rounded-card border border-acc-bd-2 bg-[linear-gradient(155deg,var(--acc-soft-2)_0%,var(--surf-2)_70%)] p-[22px]"
+      >
+        <span class="text-meta text-acc-t">Задание {{ orderLabel(o.number) }}</span>
+        <span class="font-serif text-[27px] leading-tight first-letter:uppercase">{{ statusLabels[o.status] }}</span>
+
+        @if (o.status === 'Failed' && o.error) {
+          <span class="text-meta leading-relaxed text-warn">{{ o.error }}</span>
+        }
+
+        <div class="flex flex-col gap-2 text-[13px] text-ink-5">
+          <div class="flex justify-between gap-3"><span>Автор</span><span class="text-right text-ink">{{ o.createdByName }}</span></div>
+          @if (o.createdByDepartment) {
+            <div class="flex justify-between gap-3"><span>Отдел</span><span class="text-right text-ink">{{ o.createdByDepartment }}</span></div>
+          }
+          <div class="flex justify-between gap-3"><span>Создано</span><span class="text-ink">{{ formatDateTime(o.createdAt) }}</span></div>
+          <div class="flex justify-between gap-3"><span>Листов на плоттер</span><span class="font-mono text-ink">{{ o.sheetCount }}</span></div>
+          @if (o.totalRollLengthMm > 0) {
+            <div class="flex justify-between gap-3"><span>Расход рулона</span><span class="font-mono text-ink">{{ formatMeters(o.totalRollLengthMm) }}</span></div>
+          }
+          @if (o.officeJobCount > 0) {
+            <div class="flex justify-between gap-3"><span>На офисный принтер</span><span class="font-mono text-ink">{{ o.officeJobCount }}</span></div>
+          }
+        </div>
+
+        @if (actionError(); as message) {
+          <span class="text-xs text-warn" role="alert">{{ message }}</span>
+        }
+
+        @if (canRetry()) {
+          <button type="button" class="btn-primary text-ui" [disabled]="busy()" (click)="retry()">
+            {{ busy() ? 'Отправляем…' : 'Повторить печать' }}
+          </button>
+          <span class="text-xs leading-relaxed text-ink-6">Уже напечатанные листы повторно не отправятся.</span>
+        }
+
+        @if (canCancel()) {
+          @if (confirmingCancel()) {
+            <div class="flex flex-col gap-2 rounded-tile border border-warn-bd bg-warn-bg p-3">
+              <span class="text-[13px] text-ink-2">Отменить задание? Уже напечатанные листы останутся.</span>
+              <div class="flex gap-2">
+                <button type="button" class="btn-ghost flex-1 py-2 text-[13px]" [disabled]="busy()" (click)="confirmingCancel.set(false)">
+                  Нет
+                </button>
+                <button
+                  type="button"
+                  class="flex-1 rounded-field bg-warn py-2 text-[13px] font-semibold text-bg disabled:opacity-60"
+                  [disabled]="busy()"
+                  (click)="cancel()"
+                >
+                  {{ busy() ? 'Отменяем…' : 'Да, отменить' }}
+                </button>
+              </div>
+            </div>
+          } @else {
+            <button type="button" class="btn-ghost text-[13px]" (click)="confirmingCancel.set(true)">Отменить задание</button>
+          }
+        } @else if (o.status === 'Processing') {
+          <span class="text-xs text-ink-6">Задание сейчас отправляется на принтеры - отменить можно будет через несколько секунд.</span>
+        }
+      </div>
+    </div>
+  </section>
+}

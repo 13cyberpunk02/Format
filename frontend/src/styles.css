@@ -190,3 +190,14 @@
     @apply bg-nav-active text-ink;
   }
 }
+
+@utility chip {
+  @apply inline-flex items-center rounded-full bg-chip px-2.5 py-0.5 text-[11.5px] text-ink-4;
+}
+
+@utility paper-grid {
+  background-color: var(--paper);
+  background-image:
+    repeating-linear-gradient(0deg, var(--paper-grid) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(90deg, var(--paper-grid) 0 1px, transparent 1px 8px);
+}

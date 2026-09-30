@@ -1,0 +1,133 @@
+<section class="flex flex-wrap items-start gap-[18px] px-[30px] pb-11">
+  <!-- Левая колонка: откуда брать чертежи и что уже в задании -->
+  <div class="flex min-w-[300px] flex-[1_1_380px] flex-col gap-3.5">
+    <div class="flex gap-1 self-start rounded-full bg-surf-1 p-1" role="tablist">
+      @for (item of sources; track item.value) {
+        <button
+          type="button"
+          role="tab"
+          class="rounded-full px-4 py-2 text-[13.5px] font-medium text-ink-6 transition-colors aria-selected:bg-chip aria-selected:text-ink"
+          [attr.aria-selected]="source() === item.value"
+          (click)="source.set(item.value)"
+        >
+          {{ item.label }}
+        </button>
+      }
+    </div>
+
+    @if (source() === 'upload') {
+      <app-upload-panel />
+    } @else {
+      <app-library-panel />
+    }
+
+    <app-draft-list />
+  </div>
+
+  <!-- Правая колонка: превью, раскладка, итог -->
+  <div class="flex min-w-[300px] max-w-[440px] flex-[1_1_340px] flex-col gap-3.5">
+    @if (selected(); as item) {
+      <app-sheet-card [item]="item" [printer]="formats.printerOf(item.drawing.format)" />
+    }
+
+    <div class="flex flex-col gap-3 rounded-card border border-line bg-surf-2 p-4">
+      <div class="flex items-baseline justify-between gap-3 px-1">
+        <span class="font-serif text-heading">Раскладка на рулоне</span>
+        @if (preview.isLoading()) {
+          <span class="size-1.5 animate-blink rounded-full bg-acc-t" title="Пересчитываем"></span>
+        }
+      </div>
+
+      @if (previewError(); as message) {
+        <div class="flex flex-col gap-2 rounded-tile border border-warn-bd bg-warn-bg px-4 py-3" role="alert">
+          <span class="text-[13px] text-ink-2">{{ message }}</span>
+          @if (missingIds().length > 0) {
+            <button type="button" class="self-start text-xs font-medium text-warn" (click)="removeMissing()">
+              Убрать удалённые чертежи из задания
+            </button>
+          }
+        </div>
+      }
+
+      @if (shownPreview(); as result) {
+        @if (result.sheets.length > 0) {
+          <div class="transition-opacity" [class.opacity-60]="preview.isLoading()">
+            <app-roll-preview
+              [sheets]="result.sheets"
+              [selectedId]="selected()?.drawing?.id ?? null"
+              (select)="selectedId.set($event)"
+            />
+          </div>
+        }
+
+        @if (result.officeJobs.length > 0) {
+          <div class="flex flex-col gap-2 rounded-tile border border-line-3 bg-surf-1 px-3.5 py-3">
+            <span class="text-xs text-ink-6">На офисный принтер</span>
+            <div class="flex flex-wrap gap-1.5">
+              @for (job of result.officeJobs; track job.drawingId) {
+                <button type="button" class="chip hover:bg-surf-hover" (click)="selectedId.set(job.drawingId)">
+                  <span class="font-mono">{{ job.format }}</span>&nbsp;· лист {{ job.pageNumber }} × {{ job.copies }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+      } @else if (draft.isEmpty()) {
+        <div class="rounded-panel bg-well px-4 py-10 text-center text-[13px] text-ink-6">
+          Добавьте чертежи - здесь появится схема листов на рулоне.
+        </div>
+      }
+    </div>
+
+    <div class="flex flex-col gap-4 rounded-card border border-line bg-surf-2 p-5">
+      <div class="flex items-baseline justify-between gap-3">
+        <span class="font-serif text-[20px]">К печати</span>
+        @if (totals(); as t) {
+          <span class="font-mono text-sm">{{ formatMeters(t.rollMm) }}</span>
+        }
+      </div>
+
+      @if (totals(); as t) {
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center justify-between gap-3 rounded-tile border border-line-3 bg-surf-1 px-3.5 py-3">
+            <span class="text-[13px] text-ink-2">Плоттер · листов на рулоне</span>
+            <span class="font-mono text-meta text-ink-6">{{ t.sheets }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3 rounded-tile border border-line-3 bg-surf-1 px-3.5 py-3">
+            <span class="text-[13px] text-ink-2">Принтер · A4 и A3</span>
+            <span class="font-mono text-meta text-ink-6">
+              {{ t.officeCopies }} {{ plural(t.officeCopies, 'экземпляр', 'экземпляра', 'экземпляров') }}
+            </span>
+          </div>
+        </div>
+      }
+
+      <label class="flex flex-col gap-1.5">
+        <span class="text-meta text-ink-5">Название задания</span>
+        <input
+          #titleInput
+          class="field"
+          maxlength="200"
+          [placeholder]="defaultTitle()"
+          [value]="title()"
+          (input)="title.set(titleInput.value)"
+        />
+      </label>
+
+      @if (submitError(); as message) {
+        <span class="text-xs text-warn" role="alert">{{ message }}</span>
+      }
+
+      <button type="button" class="btn-primary text-[15px]" [disabled]="!canSubmit()" (click)="submit()">
+        {{ submitting() ? 'Отправляем…' : 'Отправить в печать' }}
+      </button>
+
+      <div class="flex items-start gap-3">
+        <span class="w-1 shrink-0 self-stretch rounded-full bg-acc-bd-strong"></span>
+        <span class="text-meta leading-relaxed text-ink-5">
+          Статус задания будет виден в «Мои задания». Если у плоттера закончится бумага, вы увидите это там же.
+        </span>
+      </div>
+    </div>
+  </div>
+</section>

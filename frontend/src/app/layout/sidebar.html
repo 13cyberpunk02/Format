@@ -33,7 +33,36 @@
   }
 
   <div class="mt-auto flex flex-col gap-3">
-    <!-- Здесь будет состояние плоттера - на шаге 6 -->
+    @if (printStatus.plotter(); as plotter) {
+      @let queue = printStatus.status.value()!.queue;
+      <div class="flex flex-col gap-2 rounded-panel border border-line-3 bg-surf-2 p-3.5">
+        <div class="flex items-center justify-between gap-2">
+          <span class="truncate text-xs text-ink-5">{{ plotter.name }}</span>
+          <span
+            class="size-1.5 shrink-0 rounded-full"
+            [class]="isProblem(plotter.state) ? 'bg-warn' : plotter.state === 'Printing' ? 'animate-blink bg-acc-t' : 'bg-bar-idle'"
+          ></span>
+        </div>
+
+        <div class="h-1.5 overflow-hidden rounded-full bg-line">
+          @if (plotter.state === 'Printing') {
+            <div
+              class="h-full w-full animate-barmove rounded-full bg-[repeating-linear-gradient(115deg,var(--acc-d)_0_10px,var(--acc)_10px_20px)] bg-size-[28px_100%]"
+            ></div>
+          } @else if (isProblem(plotter.state)) {
+            <div class="h-full w-full rounded-full bg-warn"></div>
+          }
+        </div>
+
+        <span class="font-mono text-2xs text-ink-5">
+          {{ stateLabels[plotter.state] }} · в очереди {{ queue.waiting + queue.printing }}
+        </span>
+
+        @if (plotter.message && isProblem(plotter.state)) {
+          <span class="text-2xs leading-snug text-warn">{{ translate(plotter.message) }}</span>
+        }
+      </div>
+    }
 
     <div class="flex items-center gap-2.5 px-2 py-1">
       <a
