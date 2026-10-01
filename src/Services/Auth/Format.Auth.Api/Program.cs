@@ -5,11 +5,13 @@ using Format.Auth.Api.Endpoints;
 using Format.Auth.Api.Tokens;
 using Format.Auth.Api.Users;
 using Format.Security;
+using Format.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddFormatDefaults();
 
 builder.Services.AddOpenApi();
 
@@ -62,6 +64,8 @@ var app = builder.Build();
 
 app.Services.GetRequiredService<JwtSigningKey>();
 
+await app.MigrateDatabaseAsync<AuthDbContext>();
+
 using (var scope = app.Services.CreateScope())
 {
     await AdminSeeder.SeedAsync(scope.ServiceProvider);
@@ -70,6 +74,8 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<AuthDbContext>().Database.MigrateAsync();
 }
 
 app.UseRateLimiter();

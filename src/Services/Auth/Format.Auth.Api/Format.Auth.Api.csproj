@@ -19,6 +19,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\Shared\Format.Security\Format.Security.csproj" />
+      <ProjectReference Include="..\..\..\Shared\Format.ServiceDefaults\Format.ServiceDefaults.csproj" />
     </ItemGroup>
 
 </Project>

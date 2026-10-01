@@ -6,10 +6,12 @@ using Format.Print.Api.Data;
 using Format.Print.Api.Printing;
 using Format.Print.Api.Storage;
 using Format.Security;
+using Format.ServiceDefaults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddFormatDefaults();
 
 builder.Services.AddOpenApi();
 
@@ -76,4 +78,5 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 app.MapPrintEndpoints();
 app.MapStatusEndpoints();
 
+await app.MigrateDatabaseAsync<PrintDbContext>();
 app.Run();

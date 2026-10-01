@@ -2,6 +2,7 @@ using Amazon.Runtime;
 using Amazon.S3;
 using Format.Layout;
 using Format.Security;
+using Format.ServiceDefaults;
 using Format.Storage.Api.Data;
 using Format.Storage.Api.Endpoints;
 using Format.Storage.Api.Files;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.Options;
 const long maxUploadBytes = 200L * 1024 * 1024;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddFormatDefaults();
 
 builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = maxUploadBytes);
 builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = maxUploadBytes);
@@ -61,4 +63,5 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapDrawingEndpoints();
 
+await app.MigrateDatabaseAsync<StorageDbContext>();
 app.Run();

@@ -7,3 +7,7 @@ deploy/cups-dev/in/
 deploy/cups-dev/out/
 **/keys/
 **/spool/
+deploy/certs/*
+!deploy/certs/make-certs.sh
+deploy/secrets/*
+!deploy/secrets/make-secrets.sh

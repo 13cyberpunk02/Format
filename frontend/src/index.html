@@ -1,20 +1,7 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <script>
-    (function () {
-      var theme = 'dark';
-      try {
-        var saved = localStorage.getItem('format-theme');
-        if (saved === 'light' || saved === 'dark') {
-          theme = saved;
-        } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-          theme = 'light';
-        }
-      } catch (e) {}
-      document.documentElement.setAttribute('data-theme', theme);
-    })();
-  </script>
+  <script src="theme-init.js"></script>
   <meta charset="utf-8">
   <title>Формат</title>
   <base href="/">

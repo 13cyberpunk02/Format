@@ -11,7 +11,7 @@ public sealed class PrintQueueWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await RunInScopeAsync(p => p.RecoverInterruptedAsync(stoppingToken));
+        await RecoverWithRetryAsync(stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -42,5 +42,27 @@ public sealed class PrintQueueWorker(
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         await action(scope.ServiceProvider.GetRequiredService<OrderProcessor>());
+    }
+    
+    /// <summary>База может быть ещё не готова (например, сразу после перезагрузки сервера) - пробуем, пока не получится.</summary>
+    private async Task RecoverWithRetryAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                await RunInScopeAsync(p => p.RecoverInterruptedAsync(stoppingToken));
+                return;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Не удалось проверить прерванные заказы, повторим через {Delay}", ErrorDelay);
+                await Task.Delay(ErrorDelay, time, stoppingToken);
+            }
+        }
     }
 }

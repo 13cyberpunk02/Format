@@ -1,0 +1,8 @@
+# Для проверки на своей машине: вместо настоящих принтеров - виртуальные PDF-принтеры.
+# Запуск из корня репозитория:
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml up -d --build
+services:
+  cups:
+    build: ./cups-dev
+    volumes:
+      - ./cups-dev/out:/var/spool/cups-pdf/out

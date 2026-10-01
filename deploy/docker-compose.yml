@@ -1,0 +1,165 @@
+name: format
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-jwt: &jwt
+  Jwt__Issuer: format-auth
+  Jwt__Audience: format
+
+x-jwt-client: &jwt-client
+  <<: *jwt
+  Jwt__MetadataAddress: http://auth:8080/auth/.well-known/openid-configuration
+
+x-plotter: &plotter
+  Plotter__RollWidth: "914"
+  Plotter__SideMargin: "3"
+  Plotter__Gap: "10"
+  Plotter__PairOnlyIfSaves: "false"
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: format
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U format"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    logging: *logging
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.48
+    restart: unless-stopped
+    command: server -dir=/data -s3 -s3.config=/run/secrets/s3config.json
+    secrets: [s3config.json]
+    volumes:
+      - seaweed:/data
+    logging: *logging
+
+  cups:
+    build: ./cups
+    restart: unless-stopped
+    environment:
+      PLOTTER_URI: ipp://192.168.0.3/ipp/print
+      PLOTTER_MODEL: everywhere
+      PLOTTER_INFO: Canon TM-300
+      OFFICE_URI: ipp://192.168.0.42:631/ipp
+      OFFICE_MODEL: /usr/share/cups/model/format/KMbeuC754ux.ppd
+      OFFICE_INFO: Konica Minolta bizhub C654
+    logging: *logging
+
+  auth:
+    build:
+      context: ..
+      dockerfile: src/Services/Auth/Format.Auth.Api/Dockerfile
+    image: format-auth
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      <<: *jwt
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      Jwt__AccessTokenMinutes: "15"
+      Jwt__PrivateKeyPath: /run/secrets/jwt-signing.pem
+      Users__AllowedEmailDomain: company.ru
+      BootstrapAdmin__DisplayName: Администратор
+      BootstrapAdmin__Department: Администрирование
+    secrets:
+      - ConnectionStrings__Auth
+      - BootstrapAdmin__Email
+      - BootstrapAdmin__Password
+      - jwt-signing.pem
+    logging: *logging
+
+  storage:
+    build:
+      context: ..
+      dockerfile: src/Services/Storage/Format.Storage.Api/Dockerfile
+    image: format-storage
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      seaweedfs: { condition: service_started }
+    environment:
+      <<: [*jwt-client, *plotter]
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      S3__ServiceUrl: http://seaweedfs:8333
+      S3__Bucket: drawings
+    secrets:
+      - ConnectionStrings__Storage
+      - S3__AccessKey
+      - S3__SecretKey
+    logging: *logging
+
+  print:
+    build:
+      context: ..
+      dockerfile: src/Services/Print/Format.Print.Api/Dockerfile
+    image: format-print
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      cups: { condition: service_started }
+    environment:
+      <<: [*jwt-client, *plotter]
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      Storage__BaseUrl: http://storage:8080/
+      Cups__BaseUrl: http://cups:631/
+      Cups__UserName: format
+      Cups__Plotter__Queue: plotter
+      Cups__Plotter__DisplayName: Canon TM-300
+      Cups__Plotter__JobOptions__InputSlot: MainRoll
+      Cups__Plotter__JobOptions__cupsPrintQuality: High
+      Cups__Plotter__JobOptions__CutMedia: Auto
+      Cups__Plotter__JobOptions__print-scaling: none
+      Cups__Office__Queue: office
+      Cups__Office__DisplayName: Konica Minolta bizhub C654
+      Cups__Office__JobOptions__print-scaling: none
+      Cups__Office__JobOptions__sides: one-sided
+      Pickup__Location: Корпус Б, 1 этаж, каб. 112
+      Pickup__Hours: пн–пт 09:00–19:00
+    secrets:
+      - ConnectionStrings__Print
+    volumes:
+      - spool:/var/spool/format
+    logging: *logging
+
+  web:
+    build: ../frontend
+    image: format-web
+    restart: unless-stopped
+    depends_on: [auth, storage, print]
+    ports:
+      - "80:8080"
+      - "443:8443"
+    volumes:
+      - ./certs/server.crt:/etc/nginx/certs/server.crt:ro
+      - ./certs/server.key:/etc/nginx/certs/server.key:ro
+    logging: *logging
+
+volumes:
+  pgdata:
+  seaweed:
+  spool:
+
+secrets:
+  postgres_password:          { file: ./secrets/postgres_password }
+  ConnectionStrings__Auth:    { file: ./secrets/ConnectionStrings__Auth }
+  ConnectionStrings__Storage: { file: ./secrets/ConnectionStrings__Storage }
+  ConnectionStrings__Print:   { file: ./secrets/ConnectionStrings__Print }
+  S3__AccessKey:              { file: ./secrets/S3__AccessKey }
+  S3__SecretKey:              { file: ./secrets/S3__SecretKey }
+  s3config.json:              { file: ./secrets/s3config.json }
+  jwt-signing.pem:            { file: ./secrets/jwt-signing.pem }
+  BootstrapAdmin__Email:      { file: ./secrets/BootstrapAdmin__Email }
+  BootstrapAdmin__Password:   { file: ./secrets/BootstrapAdmin__Password }
