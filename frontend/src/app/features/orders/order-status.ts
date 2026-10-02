@@ -24,6 +24,14 @@ export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
   Replaced: 'заменено при повторе',
 };
 
+export const JOB_STATUS_ICONS: Record<JobStatus, string> = {
+  Pending: 'clock',
+  Completed: 'check',
+  Failed: 'triangle-exclamation',
+  Cancelled: 'ban',
+  Replaced: 'rotate-right',
+};
+
 export type StepState = 'done' | 'now' | 'next' | 'failed' | 'cancelled';
 
 export interface TimelineStep {

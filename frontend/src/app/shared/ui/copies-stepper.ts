@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 export const MIN_COPIES = 1;
 export const MAX_COPIES = 100;
@@ -14,7 +15,7 @@ export const MAX_COPIES = 100;
         [disabled]="(value() ?? min) <= min"
         (click)="step(-1)"
       >
-        −
+        <fa-icon class="text-xs" icon="minus"/>
       </button>
       <span class="min-w-[26px] text-center font-mono text-sm" aria-live="polite">{{ value() ?? '-' }}</span>
       <button
@@ -24,10 +25,13 @@ export const MAX_COPIES = 100;
         [disabled]="(value() ?? 0) >= max"
         (click)="step(1)"
       >
-        +
+        <fa-icon class="text-xs" icon="plus" />
       </button>
     </div>
   `,
+  imports: [
+    FaIconComponent
+  ]
 })
 export class CopiesStepper {
   /** null - у группы листов разное количество копий. */

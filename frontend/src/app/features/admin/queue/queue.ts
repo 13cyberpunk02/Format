@@ -8,7 +8,13 @@ import { PageHeader } from '../../../core/page-header';
 import { PrintStatusService } from '../../../core/print-status.service';
 import { translateCupsMessage } from '../../../shared/cups-messages';
 import { formatDateTime, orderLabel } from '../../../shared/format';
-import { PRINTER_STATE_LABELS, isPrinterProblem } from '../../../shared/printer-state';
+import {
+  PRINTER_STATE_LABELS,
+  isPrinterProblem,
+  PRINTER_STATE_ICONS,
+  printerKindIcon
+} from '../../../shared/printer-state';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 const REFRESH_MS = 5_000;
 
@@ -20,13 +26,15 @@ interface PrinterEntry {
 
 @Component({
   selector: 'app-queue',
-  imports: [RouterLink],
+  imports: [RouterLink, FaIconComponent],
   templateUrl: './queue.html',
 })
 export class Queue {
   private readonly printApi = inject(PrintApi);
   private readonly printStatus = inject(PrintStatusService);
 
+  protected readonly stateIcons = PRINTER_STATE_ICONS;
+  protected readonly kindIcon = printerKindIcon;
   protected readonly queue = httpResource<AdminQueue>(() => '/api/print/admin/queue');
 
   private readonly active = computed(() => (this.queue.hasValue() ? this.queue.value().active : []));

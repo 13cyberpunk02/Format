@@ -1,4 +1,5 @@
 import { Component, ElementRef, input, signal, viewChild } from '@angular/core';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 /**
  * Модальное окно на основе <dialog>.
@@ -16,12 +17,18 @@ import { Component, ElementRef, input, signal, viewChild } from '@angular/core';
       <div class="flex max-h-[85vh] flex-col gap-5 overflow-y-auto p-6 *:shrink-0">
         <div class="flex items-start justify-between gap-4">
           <h2 class="font-serif text-[24px] font-normal">{{ title() }}</h2>
-          <button type="button" class="btn-ghost px-3 py-1.5 text-xs" (click)="close()">Закрыть</button>
+          <button type="button" class="btn-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs" (click)="close()">
+            <fa-icon class="icon" icon="xmark"/>
+            Закрыть
+          </button>
         </div>
-        <ng-content />
+        <ng-content/>
       </div>
     </dialog>
   `,
+  imports: [
+    FaIconComponent
+  ]
 })
 export class Modal {
   readonly title = input.required<string>();

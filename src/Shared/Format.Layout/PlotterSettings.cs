@@ -16,4 +16,10 @@ public sealed record PlotterSettings
 
     /// <summary>Ширина, на которой плоттер реально может печатать.</summary>
     public double PrintableWidth => RollWidth - 2 * SideMargin;
+    
+    /// <summary>Запас по длине куска перед чертежом (передний край), мм.</summary>
+    public double LeadMargin { get; init; } = 0;
+
+    /// <summary>Запас по длине куска после чертежа (задний край), мм.</summary>
+    public double TrailMargin { get; init; } = 0;
 }

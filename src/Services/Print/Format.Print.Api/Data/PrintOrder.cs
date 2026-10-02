@@ -27,6 +27,9 @@ public sealed class PrintOrder
 
     public string CreatedByDepartment { get; init; } = "";
     public DateTimeOffset CreatedAt { get; init; }
+    
+    /// <summary>Перфорировать листы A4 на офисном принтере.</summary>
+    public bool Punch { get; init; }
 
     /// <summary>Оценка по раскладке в момент заказа - для списка заказов.</summary>
     public double TotalRollLengthMm { get; init; }

@@ -186,6 +186,8 @@ public static class PrintEndpoints
             TotalRollLengthMm = resolved.Plan.TotalRollLength,
             SheetCount = resolved.Plan.Sheets.Count,
             OfficeJobCount = resolved.Plan.OfficeJobs.Count,
+            Punch = request.Punch
+                    && resolved.Plan.OfficeJobs.Any(j => j.Format.Name == CupsClient.PunchableFormat),
             Items =
             [
                 .. resolved.Items.Select((item, index) =>

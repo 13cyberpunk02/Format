@@ -3,7 +3,7 @@ set -e
 NAME="${1:-company.ru}"
 cd /certs
 
-# Центр сертификации — создаётся один раз, на 10 лет
+# Центр сертификации - создаётся один раз, на 10 лет
 if [ ! -f ca.key ]; then
   openssl req -x509 -new -nodes -newkey rsa:3072 -sha256 -days 3650 \
     -keyout ca.key -out ca.crt \

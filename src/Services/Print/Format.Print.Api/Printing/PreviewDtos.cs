@@ -5,7 +5,7 @@ namespace Format.Print.Api.Printing;
 
 public sealed record PrintItemRequest(Guid DrawingId, int Copies);
 
-public sealed record PrintRequest(IReadOnlyList<PrintItemRequest>? Items, string? Title = null);
+public sealed record PrintRequest(IReadOnlyList<PrintItemRequest>? Items, string? Title = null, bool Punch = false);
 
 public sealed record PlacementDto(
     Guid DrawingId,

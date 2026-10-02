@@ -14,7 +14,10 @@
     <div class="min-w-[260px] flex-[1_1_280px] overflow-hidden rounded-card border border-line bg-surf-2">
       @let plotterState = printers().plotter;
       <div class="flex flex-col gap-0.5 border-b border-line-3 px-[18px] py-4">
-        <span class="font-serif text-heading">{{ plotterState?.name ?? 'Плоттер' }}</span>
+        <span class="flex items-center gap-2 font-serif text-heading">
+          <fa-icon class="icon text-[17px] text-acc-t" icon="scroll" />
+                  {{ plotterState?.name ?? 'Плоттер' }}
+        </span>
         <span class="text-meta" [class]="printerTone(plotterState)">
           {{ plotterState ? stateLabels[plotterState.state] : '…' }}
           · листов в работе {{ plotter().length }} · ждут отправки {{ waiting().length }}
@@ -78,7 +81,10 @@
     <div class="min-w-[260px] flex-[1_1_280px] overflow-hidden rounded-card border border-line bg-surf-2">
       @let officeState = printers().office;
       <div class="flex flex-col gap-0.5 border-b border-line-3 px-[18px] py-4">
-        <span class="font-serif text-heading">{{ officeState?.name ?? 'Офисный принтер' }}</span>
+        <span class="flex items-center gap-2 font-serif text-heading">
+          <fa-icon class="icon text-[17px] text-acc-t" icon="print" />
+                  {{ officeState?.name ?? 'Офисный принтер' }}
+        </span>
         <span class="text-meta" [class]="printerTone(officeState)">
           {{ officeState ? stateLabels[officeState.state] : '…' }} · заданий {{ office().length }}
         </span>
@@ -112,7 +118,10 @@
     <!-- Проблемы -->
     <div class="min-w-[260px] flex-[1_1_280px] overflow-hidden rounded-card border border-line bg-surf-2">
       <div class="flex flex-col gap-0.5 border-b border-line-3 px-[18px] py-4">
-        <span class="font-serif text-heading">Проблемы</span>
+        <span class="flex items-center gap-2 font-serif text-heading">
+          <fa-icon class="icon text-[17px] text-warn" icon="triangle-exclamation" />
+          Проблемы
+        </span>
         <span class="text-meta" [class]="failed().length > 0 ? 'text-warn' : 'text-ink-6'">
           упавших за неделю: {{ failed().length }}
         </span>

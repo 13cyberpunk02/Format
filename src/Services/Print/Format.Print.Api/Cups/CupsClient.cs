@@ -36,6 +36,12 @@ public sealed class CupsClient(HttpClient http, IOptions<CupsOptions> options, I
     
     private static int _lastRequestId;
     private readonly CupsOptions _options = options.Value;
+    
+    /// <summary>Формат, который умеет перфорировать финишер МФУ.</summary>
+    public const string PunchableFormat = "A4";
+
+    /// <summary>Настроена ли перфорация для офисного принтера.</summary>
+    public bool PunchAvailable => _options.Office.PunchJobOptions.Count > 0;
 
     /// <summary>Отправить лист рулона на плоттер. Возвращает номер задания в CUPS.</summary>
     public Task<int> PrintPlotterSheetAsync(
@@ -52,12 +58,18 @@ public sealed class CupsClient(HttpClient http, IOptions<CupsOptions> options, I
 
     /// <summary>Отправить A4/A3 на офисный принтер. Возвращает номер задания в CUPS.</summary>
     public Task<int> PrintOfficeAsync(
-        DrawingFormat format, Stream pdf, int copies, string jobName, CancellationToken ct)
+        DrawingFormat format, Stream pdf, int copies, string jobName, bool punch, CancellationToken ct)
     {
         var jobOptions = new Dictionary<string, string>(_options.Office.JobOptions)
         {
             ["media"] = format.Name,
         };
+
+        if (punch && format.Name == PunchableFormat)
+        {
+            foreach (var (name, value) in _options.Office.PunchJobOptions)
+                jobOptions[name] = value;
+        }
 
         return PrintAsync(_options.Office.Queue, jobName, pdf, copies, jobOptions, ct);
     }

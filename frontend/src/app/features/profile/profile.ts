@@ -6,10 +6,11 @@ import { AuthService } from '../../core/auth/auth.service';
 import { PageHeader } from '../../core/page-header';
 import { ROLE_LABELS } from '../admin/users/user-labels';
 import { ChangePasswordForm } from './change-password-form';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 @Component({
   selector: 'app-profile',
-  imports: [ChangePasswordForm],
+  imports: [ChangePasswordForm, FaIconComponent],
   templateUrl: './profile.html',
 })
 export class Profile {

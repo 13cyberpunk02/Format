@@ -1,10 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { Theme, ThemeService } from '../../core/theme.service';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 @Component({
   selector: 'app-theme-switch',
   template: `
-    <div class="flex gap-0.5 rounded-full border border-line bg-surf-1 p-[3px]" role="group" aria-label="Тема оформления">
+    <div class="flex gap-0.5 rounded-full border border-line bg-surf-1 p-[3px]" role="group"
+         aria-label="Тема оформления">
       @for (option of options; track option.value) {
         <button
           type="button"
@@ -13,17 +15,23 @@ import { Theme, ThemeService } from '../../core/theme.service';
           [attr.aria-pressed]="themeService.theme() === option.value"
           (click)="themeService.set(option.value)"
         >
-          {{ option.label }}
+          <span class="flex items-center gap-1.5">
+            <fa-icon class="icon" [icon]="option.icon"/>
+            {{ option.label }}
+          </span>
         </button>
       }
     </div>
   `,
+  imports: [
+    FaIconComponent
+  ]
 })
 export class ThemeSwitch {
   protected readonly themeService = inject(ThemeService);
 
-  protected readonly options: { value: Theme; label: string }[] = [
-    { value: 'dark', label: 'Тёмная' },
-    { value: 'light', label: 'Светлая' },
+  protected readonly options: { value: Theme; label: string; icon: string }[] = [
+    { value: 'dark', label: 'Тёмная', icon: 'moon' },
+    { value: 'light', label: 'Светлая', icon: 'sun' },
   ];
 }

@@ -7,8 +7,8 @@ import { Order, PrintItemRequest } from './models';
 export class PrintApi {
   private readonly http = inject(HttpClient);
 
-  createOrder(items: PrintItemRequest[], title: string | null): Promise<Order> {
-    return firstValueFrom(this.http.post<Order>('/api/print/orders', { items, title }));
+  createOrder(items: PrintItemRequest[], title: string | null, punch: boolean): Promise<Order> {
+    return firstValueFrom(this.http.post<Order>('/api/print/orders', { items, title, punch }));
   }
 
   cancel(orderId: string): Promise<unknown> {

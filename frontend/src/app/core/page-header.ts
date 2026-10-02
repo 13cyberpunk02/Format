@@ -8,10 +8,12 @@ export class PageHeader {
 
   readonly crumb = signal('');
   readonly title = signal('');
+  readonly icon = signal<string | null>(null);
 
-  set(crumb: string, title: string): void {
+  set(crumb: string, title: string, icon: string | null = null): void {
     this.crumb.set(crumb);
     this.title.set(title);
+    this.icon.set(icon);
     this.documentTitle.setTitle(title ? `${title} · Формат` : 'Формат');
   }
 }

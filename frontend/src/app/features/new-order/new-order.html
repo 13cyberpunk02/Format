@@ -6,10 +6,11 @@
         <button
           type="button"
           role="tab"
-          class="rounded-full px-4 py-2 text-[13.5px] font-medium text-ink-6 transition-colors aria-selected:bg-chip aria-selected:text-ink"
+          class="flex items-center gap-2 rounded-full px-4 py-2 text-[13.5px] font-medium text-ink-6 transition-colors aria-selected:bg-chip aria-selected:text-ink"
           [attr.aria-selected]="source() === item.value"
           (click)="source.set(item.value)"
         >
+          <fa-icon class="icon" [icon]="item.icon" />
           {{ item.label }}
         </button>
       }
@@ -114,11 +115,30 @@
         />
       </label>
 
+      @if (punchAvailable() && hasA4()) {
+        <label class="flex cursor-pointer items-start gap-3 rounded-tile border border-line-3 bg-surf-1 px-3.5 py-3">
+          <input
+            #punchBox
+            type="checkbox"
+            class="mt-0.5 size-4 shrink-0 accent-acc"
+            [checked]="punch()"
+            (change)="punch.set(punchBox.checked)"
+          />
+          <span class="flex flex-col gap-0.5">
+            <span class="text-[13px] text-ink-2">Перфорировать листы A4</span>
+            <span class="text-xs leading-relaxed text-ink-6">
+              Отверстия для папки-регистратора. A3 и чертежи на плоттере не перфорируются.
+            </span>
+          </span>
+        </label>
+      }
+
       @if (submitError(); as message) {
         <span class="text-xs text-warn" role="alert">{{ message }}</span>
       }
 
-      <button type="button" class="btn-primary text-[15px]" [disabled]="!canSubmit()" (click)="submit()">
+      <button type="button" class="btn-primary flex items-center justify-center gap-2 text-[15px]" [disabled]="!canSubmit()" (click)="submit()">
+        <fa-icon class="icon" icon="paper-plane" />
         {{ submitting() ? 'Отправляем…' : 'Отправить в печать' }}
       </button>
 

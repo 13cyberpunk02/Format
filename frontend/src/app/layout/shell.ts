@@ -6,10 +6,11 @@ import { PageHeader } from '../core/page-header';
 import { RulesDialog } from '../shared/ui/rules-dialog';
 import { ThemeSwitch } from '../shared/ui/theme-switch';
 import { Sidebar } from './sidebar';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, Sidebar, ThemeSwitch, RulesDialog],
+  imports: [RouterOutlet, RouterLink, Sidebar, ThemeSwitch, RulesDialog, FaIconComponent],
   templateUrl: './shell.html',
 })
 export class Shell {

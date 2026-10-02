@@ -1,9 +1,13 @@
 import {Component, ElementRef, inject, signal, viewChild} from '@angular/core';
 import {FormatsService} from '../../core/formats.service';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 @Component({
   selector: 'app-rules-dialog',
   templateUrl: './rules-dialog.html',
+  imports: [
+    FaIconComponent
+  ]
 })
 export class RulesDialog {
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');

@@ -43,9 +43,13 @@ public sealed class LayoutPlanner(PlotterSettings settings)
 
     /// <summary>Можно ли повернуть так, чтобы длинная сторона легла поперёк рулона.</summary>
     public bool IsRotatable(DrawingFormat format) => format.LongSide <= settings.PrintableWidth;
+    
+    /// <summary>Сколько добавляется к длине каждого куска рулона ради полей у краёв.</summary>
+    private double EndMargins => settings.LeadMargin + settings.TrailMargin;
 
     /// <summary>Расход рулона на один экземпляр, напечатанный отдельно.</summary>
-    public double SingleCost(DrawingFormat format) => IsRotatable(format) ? format.ShortSide : format.LongSide;
+    public double SingleCost(DrawingFormat format) =>
+        (IsRotatable(format) ? format.ShortSide : format.LongSide) + EndMargins;
 
     private IEnumerable<PlotterSheet> NestOrSingle(List<(Guid Id, DrawingFormat Format)> leftovers)
     {
@@ -90,7 +94,7 @@ public sealed class LayoutPlanner(PlotterSettings settings)
 
     /// <summary>Сколько рулона экономит склейка двух чертежей по сравнению с раздельной печатью.</summary>
     private double NestingSaving(DrawingFormat a, DrawingFormat b) =>
-        SingleCost(a) + SingleCost(b) - Math.Max(a.LongSide, b.LongSide);
+        SingleCost(a) + SingleCost(b) - (Math.Max(a.LongSide, b.LongSide) + EndMargins);
 
     /// <summary>Помещаются ли два чертежа рядом, короткими сторонами поперёк рулона.</summary>
     private bool FitsSideBySide(DrawingFormat a, DrawingFormat b) =>
@@ -99,7 +103,7 @@ public sealed class LayoutPlanner(PlotterSettings settings)
     private bool CanPairDuplicates(DrawingFormat format) =>
         format.AllowDuplicatePair
         && FitsSideBySide(format, format)
-        && (!settings.PairOnlyIfSaves || format.LongSide < 2 * SingleCost(format));
+        && (!settings.PairOnlyIfSaves || format.LongSide + EndMargins < 2 * SingleCost(format));
 
     /// <summary>
     /// Объединяет строки заказа по чертежу: если один чертёж указан дважды, копии складываются.
@@ -139,9 +143,9 @@ public sealed class LayoutPlanner(PlotterSettings settings)
 
         return new PlotterSheet(
             settings.RollWidth,
-            length,
+            length + EndMargins,
             rotate ? SheetKind.Rotated : SheetKind.Single,
-            [new Placement(drawingId, format, x, 0, width, length)]);
+            [new Placement(drawingId, format, x, settings.LeadMargin, width, length)]);
     }
 
     /// <summary>
@@ -153,21 +157,21 @@ public sealed class LayoutPlanner(PlotterSettings settings)
         (Guid Id, DrawingFormat Format) left,
         (Guid Id, DrawingFormat Format) right)
     {
-        var length = Math.Max(left.Format.LongSide, right.Format.LongSide);
+        var contentLength = Math.Max(left.Format.LongSide, right.Format.LongSide);
         var usedWidth = left.Format.ShortSide + settings.Gap + right.Format.ShortSide;
         var x0 = (settings.RollWidth - usedWidth) / 2;
 
-        return new PlotterSheet(settings.RollWidth, length, kind,
+        return new PlotterSheet(settings.RollWidth, contentLength + EndMargins, kind,
         [
             new Placement(left.Id, left.Format,
                 X: x0,
-                Y: (length - left.Format.LongSide) / 2,
+                Y: settings.LeadMargin + (contentLength - left.Format.LongSide) / 2,
                 Width: left.Format.ShortSide,
                 Height: left.Format.LongSide),
 
             new Placement(right.Id, right.Format,
                 X: x0 + left.Format.ShortSide + settings.Gap,
-                Y: (length - right.Format.LongSide) / 2,
+                Y: settings.LeadMargin + (contentLength - right.Format.LongSide) / 2,
                 Width: right.Format.ShortSide,
                 Height: right.Format.LongSide),
         ]);

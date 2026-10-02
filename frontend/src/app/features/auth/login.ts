@@ -4,9 +4,11 @@ import {Router} from '@angular/router';
 import {email, form, FormField, required, submit} from '@angular/forms/signals';
 import {problemMessage} from '../../core/api/problem';
 import {ThemeSwitch} from '../../shared/ui/theme-switch';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {Revealable} from '../../shared/ui/revealable';
 
 @Component({
-  imports: [FormField, ThemeSwitch],
+  imports: [FormField, ThemeSwitch, FaIconComponent, Revealable],
   selector: 'app-login',
   templateUrl: './login.html',
 })

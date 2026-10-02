@@ -16,6 +16,7 @@ public sealed record OrderDto(
     double TotalRollLengthMm,
     int SheetCount,
     int OfficeJobCount,
+    bool Punch,
     DateTimeOffset? StartedAt,
     DateTimeOffset? CompletedAt,
     string? Error,
@@ -24,7 +25,7 @@ public sealed record OrderDto(
 {
     public static OrderDto From(PrintOrder o) => new(
         o.Id, o.Number, o.Title, o.Status, o.CreatedAt, o.CreatedById, o.CreatedByName, o.CreatedByDepartment,
-        o.TotalRollLengthMm, o.SheetCount, o.OfficeJobCount,
+        o.TotalRollLengthMm, o.SheetCount, o.OfficeJobCount, o.Punch,
         o.StartedAt, o.CompletedAt, o.Error,
         [
             .. o.Items
@@ -35,7 +36,7 @@ public sealed record OrderDto(
             .. o.Jobs
                 .OrderBy(j => j.CreatedAt)
                 .Select(j => new JobDto(j.CupsJobId, j.Printer, j.Description, j.Copies, j.Status, j.CreatedAt,
-                    j.CompletedAt, j.StateMessage + " "+ j.Error))
+                    j.CompletedAt, j.StateMessage + j.Error))
         ]);
 }
 

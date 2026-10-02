@@ -4,10 +4,11 @@ import { plural } from '../../shared/format';
 import { CopiesStepper } from '../../shared/ui/copies-stepper';
 import { SheetThumb } from '../../shared/ui/sheet-thumb';
 import { DraftGroup, OrderDraft } from './order-draft';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 @Component({
   selector: 'app-draft-list',
-  imports: [CopiesStepper, SheetThumb],
+  imports: [CopiesStepper, SheetThumb, FaIconComponent],
   templateUrl: './draft-list.html',
 })
 export class DraftList {

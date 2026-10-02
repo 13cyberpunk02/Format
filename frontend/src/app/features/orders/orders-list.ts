@@ -6,18 +6,19 @@ import { PageHeader } from '../../core/page-header';
 import { formatDateTime, formatMeters, orderLabel } from '../../shared/format';
 import { StatusChip } from '../../shared/ui/status-chip';
 import { ACTIVE_STATUSES, isActive } from './order-status';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 type Filter = 'all' | 'active' | 'completed' | 'failed' | 'cancelled';
 
-const FILTERS: { value: Filter; label: string; statuses: OrderStatus[] }[] = [
-  { value: 'all', label: 'Все', statuses: [] },
-  { value: 'active', label: 'В работе', statuses: ACTIVE_STATUSES },
-  { value: 'completed', label: 'Напечатано', statuses: ['Completed'] },
-  { value: 'failed', label: 'С ошибкой', statuses: ['Failed'] },
-  { value: 'cancelled', label: 'Отменённые', statuses: ['Cancelled'] },
+const FILTERS: { value: Filter; label: string; icon: string; statuses: OrderStatus[] }[] = [
+  { value: 'all', label: 'Все', icon: 'layer-group', statuses: [] },
+  { value: 'active', label: 'В работе', icon: 'gear', statuses: ACTIVE_STATUSES },
+  { value: 'completed', label: 'Напечатано', icon: 'check', statuses: ['Completed'] },
+  { value: 'failed', label: 'С ошибкой', icon: 'triangle-exclamation', statuses: ['Failed'] },
+  { value: 'cancelled', label: 'Отменённые', icon: 'ban', statuses: ['Cancelled'] },
 ];
 
-/** Сетка таблицы для двух режимов. Строки целиком — иначе Tailwind не увидит классы. */
+/** Сетка таблицы для двух режимов. Строки целиком - иначе Tailwind не увидит классы. */
 const GRID_MINE = 'grid grid-cols-[104px_minmax(200px,1.6fr)_90px_140px_100px_130px]';
 const GRID_ALL = 'grid grid-cols-[104px_minmax(200px,1.6fr)_minmax(160px,1fr)_80px_130px_100px_130px]';
 
@@ -26,11 +27,11 @@ const REFRESH_MS = 10_000;
 
 @Component({
   selector: 'app-orders-list',
-  imports: [RouterLink, StatusChip],
+  imports: [RouterLink, StatusChip, FaIconComponent],
   templateUrl: './orders-list.html',
 })
 export class OrdersList {
-  /** 'mine' — мои задания, 'all' — все заказы (для администратора). Приходит из data маршрута. */
+  /** 'mine' - мои задания, 'all' - все заказы (для администратора). Приходит из data маршрута. */
   readonly scope = input<'mine' | 'all'>('mine');
 
   protected readonly isAll = computed(() => this.scope() === 'all');
@@ -66,8 +67,8 @@ export class OrdersList {
     const header = inject(PageHeader);
     effect(() =>
       this.isAll()
-        ? header.set('Администрирование', 'Все задания')
-        : header.set('Печать', 'Мои задания'),
+        ? header.set('Администрирование', 'Все задания', 'layer-group')
+        : header.set('Печать', 'Мои задания', 'list-check'),
     );
 
     effect((onCleanup) => {

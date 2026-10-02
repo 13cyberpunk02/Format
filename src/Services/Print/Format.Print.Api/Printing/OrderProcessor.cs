@@ -130,10 +130,12 @@ public sealed class OrderProcessor(
 
             var item = items[office.DrawingId];
             var description = $"{item.FileName}, лист {item.PageNumber} ({office.Format.Name})";
-
+            var punch = order.Punch && office.Format.Name == CupsClient.PunchableFormat;
+            if (punch)
+                description += " · перфорация";
             await using var pdf = File.OpenRead(files[office.DrawingId]);
             var cupsJobId = await cups.PrintOfficeAsync(
-                office.Format, pdf, office.Copies, $"Заказ {orderLabel}: {description}", ct);
+                office.Format, pdf, office.Copies, $"Заказ {orderLabel}: {description}", punch, ct);
 
             await RecordJobAsync(order, cupsJobId, key, "office", description, office.Copies);
         }
@@ -177,7 +179,7 @@ public sealed class OrderProcessor(
             }
         }
         if (skipped > 0)
-            logger.LogInformation("Заказ {OrderId}: пропущено уже отправленных заданий — {Count}", order.Id, skipped);
+            logger.LogInformation("Заказ {OrderId}: пропущено уже отправленных заданий - {Count}", order.Id, skipped);
     }
 
     /// <summary>Запомнить отправленное задание сразу - даже если следующий лист упадёт.</summary>

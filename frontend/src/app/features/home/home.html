@@ -18,9 +18,14 @@
     <div class="flex min-w-[240px] flex-[1_1_260px] flex-col gap-3">
       @for (stat of stats(); track stat.label) {
         <div class="flex flex-1 items-center justify-between gap-3 rounded-panel border border-line bg-surf-2 px-[18px] py-4">
-          <div class="flex flex-col gap-0.5">
-            <span class="text-[13px] text-ink-5">{{ stat.label }}</span>
-            <span class="text-xs text-ink-6">{{ stat.note }}</span>
+          <div class="flex items-center gap-3">
+            <span class="grid size-9 place-items-center rounded-field bg-chip text-ink-4">
+              <fa-icon [icon]="stat.icon" />
+            </span>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-[13px] text-ink-5">{{ stat.label }}</span>
+              <span class="text-xs text-ink-6">{{ stat.note }}</span>
+            </div>
           </div>
           <span class="font-mono text-[23px]" [class]="stat.accent ? 'text-acc-t' : 'text-ink'">{{ stat.value }}</span>
         </div>
@@ -67,11 +72,19 @@
           @for (printer of printStatus.status.value().printers; track printer.key) {
             <div class="flex flex-col gap-1.5">
               <div class="flex items-baseline justify-between gap-2.5">
-                <span class="text-ui font-medium">{{ printer.name }}</span>
+                <span class="flex items-center gap-2 text-ui font-medium">
+                  <fa-icon class="icon text-ink-6" [icon]="kindIcon(printer.key)" />
+                  {{ printer.name }}
+                </span>
                 <span
-                  class="text-xs"
+                  class="flex items-center gap-1.5 text-xs"
                   [class]="isProblem(printer.state) ? 'text-warn' : printer.state === 'Printing' ? 'text-acc-t' : 'text-ink-6'"
                 >
+                  <fa-icon
+                    class="icon"
+                    [icon]="stateIcons[printer.state]"
+                    [animation]="printer.state === 'Printing' ? 'beat-fade' : undefined"
+                  />
                   {{ stateLabels[printer.state] }}
                 </span>
               </div>
@@ -103,7 +116,10 @@
 
       @if (printStatus.status.hasValue() && printStatus.status.value().pickup; as pickup) {
         <div class="flex flex-col gap-2 rounded-card border border-line bg-surf-2 p-5">
-          <span class="font-serif text-heading">Где забрать</span>
+          <span class="flex items-center gap-2 font-serif text-heading">
+            <fa-icon class="icon text-[17px] text-acc-t" icon="location-dot" />
+            Где забрать
+          </span>
           <span class="text-[13px] leading-relaxed text-ink-5">
             {{ pickup.location }}
             @if (pickup.hours) {

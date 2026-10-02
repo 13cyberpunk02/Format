@@ -10,7 +10,8 @@
     @if (users.hasValue()) {
       <span class="text-meta text-ink-6">{{ filtered().length }} из {{ users.value().length }}</span>
     }
-    <button type="button" class="btn-primary ml-auto px-5 py-2.5 text-[13px]" (click)="openCreate()">
+    <button type="button" class="btn-primary ml-auto flex items-center gap-2 px-5 py-2.5 text-[13px]" (click)="openCreate()">
+      <fa-icon class="icon" icon="user-plus" />
       Добавить пользователя
     </button>
   </div>
@@ -20,7 +21,9 @@
       <span class="text-[13px] text-ink-2">{{ n.text }}</span>
       @if (n.password) {
         <code class="rounded-field bg-surf-1 px-2.5 py-1 font-mono text-sm text-ink">{{ n.password }}</code>
-        <button type="button" class="text-xs font-medium text-acc-t" (click)="copy(n.password)">скопировать</button>
+        <button type="button" class="flex items-center gap-1 text-xs font-medium text-acc-t" (click)="copy(n.password)">
+          <fa-icon class="icon" icon="copy" /> скопировать
+        </button>
       }
       <button type="button" class="ml-auto text-xs text-ink-6 hover:text-ink" (click)="notice.set(null)">скрыть</button>
     </div>
@@ -60,20 +63,24 @@
                 <span class="truncate text-xs text-ink-6">{{ user.email }}</span>
               </span>
               <span class="truncate text-[13px] text-ink-4">{{ user.department || '-' }}</span>
-              <span class="text-[13px]" [class]="user.role === 'Admin' ? 'text-acc-t' : 'text-ink-4'">
+              <span class="flex items-center gap-1.5 text-[13px]" [class]="user.role === 'Admin' ? 'text-acc-t' : 'text-ink-4'">
+                <fa-icon class="icon" [icon]="roleIcons[user.role]" />
                 {{ roleLabels[user.role] }}
               </span>
               <span
-                class="justify-self-start rounded-full px-[11px] py-[5px] text-[11.5px]"
+                class="flex items-center gap-1.5 justify-self-start rounded-full px-[11px] py-[5px] text-[11.5px]"
                 [class]="user.status === 'Active' ? 'bg-ok-bg text-acc-t' : user.status === 'Disabled' ? 'bg-warn-chip text-warn' : 'bg-chip text-ink-4'"
               >
+                <fa-icon class="icon" [icon]="statusIcons[user.status]" />
                 {{ statusLabels[user.status] }}
               </span>
               <span class="font-mono text-xs text-ink-5">
                 {{ user.lastLoginAt ? formatDateTime(user.lastLoginAt) : 'не входил' }}
               </span>
               <span class="flex justify-end gap-3 text-xs">
-                <button type="button" class="text-acc-t hover:text-acc-hi" (click)="openEdit(user)">изменить</button>
+                <button type="button" class="flex items-center gap-1 text-acc-t hover:text-acc-hi" (click)="openEdit(user)">
+                  <fa-icon class="icon" icon="pen" /> изменить
+                </button>
                 @if (!isSelf) {
                   <button
                     type="button"
@@ -82,6 +89,7 @@
                     [disabled]="busyId() === user.id"
                     (click)="toggleBlocked(user)"
                   >
+                    <fa-icon class="icon" [icon]="user.status === 'Disabled' ? 'lock-open' : 'lock'" />
                     {{ user.status === 'Disabled' ? 'разблокировать' : 'заблокировать' }}
                   </button>
                 }

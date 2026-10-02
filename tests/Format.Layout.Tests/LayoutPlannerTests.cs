@@ -311,4 +311,28 @@ public class LayoutPlannerTests
         Assert.Single(plan.Sheets, s => s.Kind == SheetKind.Nested);
         Assert.Equal(594 + 1486, plan.TotalRollLength);
     }
+    
+    [Fact]
+    public void End_margins_lengthen_sheet_and_shift_drawing()
+    {
+        var planner = new LayoutPlanner(new PlotterSettings { LeadMargin = 10, TrailMargin = 5 });
+
+        var sheet = Assert.Single(planner.Plan([Item("A1")]).Sheets);
+
+        Assert.Equal(594 + 15, sheet.Length);
+        Assert.Equal(10, sheet.Placements[0].Y);
+    }
+
+    [Fact]
+    public void End_margins_keep_shorter_drawing_centered()
+    {
+        var planner = new LayoutPlanner(new PlotterSettings { LeadMargin = 10, TrailMargin = 10 });
+        var a2 = Item("A2");
+
+        var sheet = Assert.Single(planner.Plan([a2, Item("A3x4")]).Sheets);
+
+        Assert.Equal(1189 + 20, sheet.Length);
+        var a2Placement = sheet.Placements.Single(p => p.DrawingId == a2.DrawingId);
+        Assert.Equal(10 + (1189 - 594) / 2.0, a2Placement.Y);
+    }
 }

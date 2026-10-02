@@ -2,15 +2,20 @@ import { Component, computed, inject, output, signal } from '@angular/core';
 import { FormField, form, minLength, required, submit } from '@angular/forms/signals';
 import { problemMessage } from '../../core/api/problem';
 import { AuthService } from '../../core/auth/auth.service';
+import {Revealable} from '../../shared/ui/revealable';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 @Component({
   selector: 'app-change-password-form',
-  imports: [FormField],
+  imports: [FormField, Revealable, FaIconComponent],
   template: `
     <form class="flex flex-col gap-3" novalidate (submit)="onSubmit($event)">
       @let current = passwordForm.currentPassword();
       <label class="flex flex-col gap-1.5">
-        <span class="text-meta text-ink-5">Текущий пароль</span>
+        <span class="flex items-center gap-1.5 text-meta text-ink-5">
+          <fa-icon class="icon" icon="key" />
+          Текущий пароль
+        </span>
         <input
           class="field"
           type="password"
@@ -26,13 +31,25 @@ import { AuthService } from '../../core/auth/auth.service';
       @let next = passwordForm.newPassword();
       <label class="flex flex-col gap-1.5">
         <span class="text-meta text-ink-5">Новый пароль</span>
-        <input
-          class="field"
-          type="password"
-          autocomplete="new-password"
-          [formField]="passwordForm.newPassword"
-          [attr.aria-invalid]="next.touched() && next.invalid()"
-        />
+        <div class="relative">
+          <input
+            #nextInput="revealable"
+            appRevealable
+            class="field pr-11"
+            autocomplete="new-password"
+            [formField]="passwordForm.newPassword"
+            [attr.aria-invalid]="next.touched() && next.invalid()"
+          />
+          <button
+            type="button"
+            class="absolute inset-y-0 right-0 grid w-11 place-items-center text-ink-6 hover:text-ink"
+            [attr.aria-label]="nextInput.visible() ? 'Скрыть пароль' : 'Показать пароль'"
+            [attr.aria-pressed]="nextInput.visible()"
+            (click)="nextInput.toggle()"
+          >
+            <fa-icon [icon]="nextInput.visible() ? 'eye-slash' : 'eye'" />
+          </button>
+        </div>
         @if (next.touched() && next.invalid()) {
           <span class="text-xs text-warn">{{ next.errors()[0]?.message }}</span>
         } @else {
@@ -42,13 +59,26 @@ import { AuthService } from '../../core/auth/auth.service';
 
       <label class="flex flex-col gap-1.5">
         <span class="text-meta text-ink-5">Новый пароль ещё раз</span>
-        <input
-          class="field"
-          type="password"
-          autocomplete="new-password"
-          [formField]="passwordForm.confirm"
-          [attr.aria-invalid]="mismatch()"
-        />
+        <div class="relative">
+          <input
+            #confirmInput="revealable"
+            appRevealable
+            class="field pr-11"
+            autocomplete="new-password"
+            [formField]="passwordForm.confirm"
+            [attr.aria-invalid]="mismatch()"
+          />
+          <button
+            type="button"
+            class="absolute inset-y-0 right-0 grid w-11 place-items-center text-ink-6 hover:text-ink"
+            [attr.aria-label]="confirmInput.visible() ? 'Скрыть пароль' : 'Показать пароль'"
+            [attr.aria-pressed]="confirmInput.visible()"
+            (click)="confirmInput.toggle()"
+          >
+            <fa-icon [icon]="confirmInput.visible() ? 'eye-slash' : 'eye'" />
+          </button>
+        </div>
+
         @if (mismatch()) {
           <span class="text-xs text-warn">Пароли не совпадают</span>
         }
@@ -74,6 +104,7 @@ export class ChangePasswordForm {
   protected readonly passwordForm = form(this.model, (path) => {
     required(path.currentPassword, { message: 'Введите текущий пароль' });
     required(path.newPassword, { message: 'Введите новый пароль' });
+    required(path.confirm, { message: 'Введите новый пароль еще раз' });
     minLength(path.newPassword, 8, { message: 'Не короче 8 символов' });
   });
 

@@ -6,16 +6,19 @@
   (dragleave)="onDragLeave()"
   (drop)="onDrop($event)"
 >
-  <div class="grid size-[42px] place-items-center rounded-[13px] bg-acc-soft text-[19px] text-acc-t">↑</div>
+  <div class="grid size-[42px] place-items-center rounded-[13px] bg-acc-soft text-[19px] text-acc-t">
+    <fa-icon icon="cloud-arrow-up" />
+  </div>
   <div class="text-base font-semibold">Перетащите PDF или выберите</div>
   <div class="text-[13px] leading-relaxed text-ink-6">
     Многостраничный файл разделится на листы.<br />Формат и принтер сервис определит сам.
   </div>
   <button
     type="button"
-    class="mt-1.5 rounded-full border border-acc-bd-strong px-[18px] py-2.5 text-ui font-medium text-acc-t"
+    class="mt-1.5 flex items-center gap-2 rounded-full border border-acc-bd-strong px-[18px] py-2.5 text-ui font-medium text-acc-t"
     (click)="fileInput.click()"
   >
+    <fa-icon class="icon" icon="folder-open" />
     Выбрать файлы
   </button>
   <input #fileInput type="file" accept="application/pdf,.pdf" multiple class="hidden" (change)="onPick(fileInput)" />
@@ -43,12 +46,16 @@
             <span class="text-xs text-ink-5">Загружаем и проверяем листы…</span>
           }
           @case ('done') {
-            <span class="text-xs text-acc-t">
+            <span class="flex items-center gap-1.5 text-xs text-acc-t">
+              <fa-icon class="icon" icon="circle-check" />
               Добавлено в задание: {{ task.accepted }} {{ plural(task.accepted, 'лист', 'листа', 'листов') }}
             </span>
           }
           @case ('failed') {
-            <span class="text-xs text-warn">{{ task.error }}</span>
+            <span class="flex items-center gap-1.5 text-xs text-warn">
+              <fa-icon class="icon" icon="triangle-exclamation" />
+              {{ task.error }}
+            </span>
           }
         }
 

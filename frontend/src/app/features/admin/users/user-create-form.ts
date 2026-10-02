@@ -5,6 +5,7 @@ import { problemMessage } from '../../../core/api/problem';
 import { UsersApi } from '../../../core/api/users.api';
 import { UserRole } from '../../../core/auth/auth.models';
 import { generatePassword } from '../../../shared/password';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 export interface CreatedUser {
   user: AdminUser;
@@ -13,7 +14,7 @@ export interface CreatedUser {
 
 @Component({
   selector: 'app-user-create-form',
-  imports: [FormField],
+  imports: [FormField, FaIconComponent],
   templateUrl: './user-create-form.html',
 })
 export class UserCreateForm {

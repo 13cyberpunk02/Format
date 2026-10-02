@@ -36,7 +36,10 @@
   <div class="flex min-w-[280px] max-w-[440px] flex-[1_1_340px] flex-col gap-4">
     <!-- Смена пароля -->
     <div class="flex flex-col gap-4 rounded-card border border-line bg-surf-2 p-[22px]">
-      <span class="font-serif text-heading">Смена пароля</span>
+      <span class="flex items-center gap-2 font-serif text-heading">
+        <fa-icon class="icon text-[17px] text-acc-t" icon="key" />
+        Смена пароля
+      </span>
 
       @if (passwordChanged()) {
         <div class="flex flex-col gap-3 rounded-tile border border-acc-bd-2 bg-acc-soft px-4 py-3.5">
@@ -54,7 +57,10 @@
 
     <!-- Сеансы -->
     <div class="flex flex-col gap-3 rounded-card border border-line bg-surf-2 p-[22px]">
-      <span class="font-serif text-heading">Сеансы</span>
+      <span class="flex items-center gap-2 font-serif text-heading">
+        <fa-icon class="icon text-[17px] text-acc-t" icon="right-from-bracket" />
+        Сеансы
+      </span>
       <span class="text-[13px] leading-relaxed text-ink-5">
         Если вы входили с чужого компьютера или потеряли ноутбук - завершите все сеансы. Выйти придётся и здесь.
       </span>
@@ -75,15 +81,17 @@
           </button>
           <button
             type="button"
-            class="flex-1 rounded-field bg-warn py-2.5 text-[13px] font-semibold text-bg disabled:opacity-60"
+            class="flex flex-1 items-center justify-center gap-2 rounded-field bg-warn py-2.5 text-[13px] font-semibold text-bg disabled:opacity-60"
             [disabled]="logoutBusy()"
             (click)="logoutEverywhere()"
           >
+            <fa-icon class="icon" icon="right-from-bracket" />
             {{ logoutBusy() ? 'Завершаем…' : 'Да, выйти везде' }}
           </button>
         </div>
       } @else {
-        <button type="button" class="btn-ghost text-[13px]" (click)="confirmingLogoutAll.set(true)">
+        <button type="button" class="btn-ghost flex items-center justify-center gap-2 text-[13px]" (click)="confirmingLogoutAll.set(true)">
+          <fa-icon class="icon" icon="right-from-bracket" />
           Выйти на всех устройствах
         </button>
       }

@@ -2,7 +2,10 @@
   <div class="flex flex-wrap gap-2">
     <form class="flex min-w-[200px] flex-1 gap-2" (submit)="$event.preventDefault(); applySearch(query.value)">
       <input #query class="field py-2.5" type="search" placeholder="Поиск по имени файла" />
-      <button type="submit" class="btn-ghost shrink-0 py-2.5 text-[13px]">Найти</button>
+      <button type="submit" class="btn-ghost flex shrink-0 items-center gap-2 py-2.5 text-[13px]">
+        <fa-icon class="icon" icon="magnifying-glass" />
+        Найти
+      </button>
     </form>
 
     <select #formatSelect class="field w-auto py-2.5" (change)="applyFormat(formatSelect.value)">
@@ -49,9 +52,13 @@
 
           <div class="flex shrink-0 flex-col items-end gap-1">
             @if (draft.drawingIds().has(drawing.id)) {
-              <span class="text-xs text-acc-t">в задании</span>
+              <span class="flex items-center gap-1 text-xs text-acc-t">
+                <fa-icon class="icon" icon="check" />
+                в задании
+              </span>
             } @else {
-              <button type="button" class="text-xs font-medium text-acc-t hover:text-acc-hi" (click)="draft.add([drawing])">
+              <button type="button" class="flex items-center gap-1 text-xs font-medium text-acc-t hover:text-acc-hi" (click)="draft.add([drawing])">
+                <fa-icon class="icon" icon="plus" />
                 Добавить
               </button>
             }

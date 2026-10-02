@@ -22,7 +22,7 @@ export class DrawingsApi {
     return firstValueFrom(this.http.get(`/api/drawings/${drawingId}/file`, { responseType: 'blob' }));
   }
 
-  /** Файл чертежа как данные в памяти — с токеном, через перехватчик. */
+  /** Файл чертежа как данные в памяти - с токеном, через перехватчик. */
   async fetchFile(drawingId: string, download: boolean): Promise<{ blob: Blob; fileName: string }> {
     const response = await firstValueFrom(
       this.http.get(`/api/drawings/${drawingId}/file`, {

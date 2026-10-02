@@ -12,15 +12,22 @@
 
   <main class="flex min-w-0 flex-1 flex-col">
     <header class="flex flex-wrap items-end justify-between gap-4 px-[30px] pt-[26px] pb-5">
-      <div class="flex min-w-0 items-center gap-3">
+      <div class="flex min-w-0 items-center gap-3.5">
         <button
           type="button"
           class="grid size-10 place-items-center rounded-field border border-line-2 text-ink-3 lg:hidden"
           aria-label="Открыть меню"
           (click)="menuOpen.set(true)"
         >
-          ☰
+          <fa-icon icon="bars" />
         </button>
+
+        @if (header.icon(); as icon) {
+          <span class="hidden size-11 shrink-0 place-items-center rounded-tile border border-acc-bd-2 bg-acc-soft text-lg text-acc-t sm:grid">
+            <fa-icon [icon]="icon" />
+          </span>
+        }
+
         <div class="flex min-w-0 flex-col gap-1">
           <div class="text-meta text-ink-6">{{ header.crumb() }}</div>
           <h1 class="truncate font-serif text-title leading-[1.15] font-normal tracking-[-0.005em]">
@@ -33,15 +40,17 @@
         <app-theme-switch />
         <button
           type="button"
-          class="rounded-full border border-line-2 px-[15px] py-2.5 text-[13px] font-medium text-ink-2 transition-colors hover:bg-surf-hover"
+          class="flex items-center gap-2 rounded-full border border-line-2 px-[15px] py-2.5 text-[13px] font-medium text-ink-2 transition-colors hover:bg-surf-hover"
           (click)="rules().open()"
         >
+          <fa-icon class="icon" icon="circle-info" />
           Правила печати
         </button>
         <a
           routerLink="/new"
-          class="rounded-full bg-acc px-[18px] py-2.5 text-[13px] font-semibold text-on-acc no-underline hover:text-on-acc hover:no-underline"
+          class="flex items-center gap-2 rounded-full bg-acc px-[18px] py-2.5 text-[13px] font-semibold text-on-acc no-underline hover:text-on-acc hover:no-underline"
         >
+          <fa-icon class="icon" icon="plus" />
           Новое задание
         </a>
       </div>

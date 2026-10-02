@@ -6,12 +6,13 @@ import { problemMessage } from '../../core/api/problem';
 import { FormatsService } from '../../core/formats.service';
 import { SheetThumb } from '../../shared/ui/sheet-thumb';
 import { OrderDraft } from './order-draft';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 const PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-library-panel',
-  imports: [SheetThumb],
+  imports: [SheetThumb, FaIconComponent],
   templateUrl: './library-panel.html',
 })
 export class LibraryPanel {

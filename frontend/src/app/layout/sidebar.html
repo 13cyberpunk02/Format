@@ -16,17 +16,26 @@
         ariaCurrentWhenActive="page"
         [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
       >
-        {{ item.label }}
+        <span class="flex items-center gap-2.5">
+          <fa-icon class="icon text-[15px] opacity-80" [icon]="item.icon" />
+          {{ item.label }}
+        </span>
       </a>
     }
   </nav>
 
   @if (auth.isAdmin()) {
     <nav class="flex flex-col gap-[3px]" aria-label="Администрирование">
-      <span class="px-[13px] pb-1 text-2xs tracking-wider text-ink-6 uppercase">Администрирование</span>
+      <span class="flex items-center gap-2 px-[13px] pb-1 text-2xs tracking-wider text-ink-6 uppercase">
+        <fa-icon class="icon" icon="user-shield" />
+        Администрирование
+      </span>
       @for (item of adminItems; track item.link) {
         <a class="nav-item" [routerLink]="item.link" routerLinkActive ariaCurrentWhenActive="page">
-          {{ item.label }}
+          <span class="flex items-center gap-2.5">
+            <fa-icon class="icon text-[15px] opacity-80" [icon]="item.icon" />
+            {{ item.label }}
+          </span>
         </a>
       }
     </nav>
@@ -37,7 +46,10 @@
       @let queue = printStatus.status.value()!.queue;
       <div class="flex flex-col gap-2 rounded-panel border border-line-3 bg-surf-2 p-3.5">
         <div class="flex items-center justify-between gap-2">
-          <span class="truncate text-xs text-ink-5">{{ plotter.name }}</span>
+          <span class="flex min-w-0 items-center gap-1.5 text-xs text-ink-5">
+            <fa-icon class="icon" [icon]="kindIcon(plotter.key)" />
+            <span class="truncate">{{ plotter.name }}</span>
+          </span>
           <span
             class="size-1.5 shrink-0 rounded-full"
             [class]="isProblem(plotter.state) ? 'bg-warn' : plotter.state === 'Printing' ? 'animate-blink bg-acc-t' : 'bg-bar-idle'"
@@ -76,7 +88,8 @@
           <span class="truncate text-2xs text-ink-6">{{ auth.user()?.department }}</span>
         </span>
       </a>
-      <button type="button" class="px-1 py-0.5 text-[11.5px] text-ink-6 hover:text-ink" (click)="auth.logout()">
+      <button type="button" class="flex items-center gap-1.5 px-1 py-0.5 text-[11.5px] text-ink-6 hover:text-ink" (click)="auth.logout()">
+        <fa-icon class="icon" icon="right-from-bracket" />
         выйти
       </button>
     </div>

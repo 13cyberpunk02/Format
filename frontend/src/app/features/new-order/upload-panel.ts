@@ -5,6 +5,7 @@ import { RejectedPage } from '../../core/api/models';
 import { problemMessage } from '../../core/api/problem';
 import { formatBytes, plural } from '../../shared/format';
 import { OrderDraft } from './order-draft';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 const MAX_FILE_BYTES = 200 * 1024 * 1024;
 
@@ -21,6 +22,9 @@ interface UploadTask {
 @Component({
   selector: 'app-upload-panel',
   templateUrl: './upload-panel.html',
+  imports: [
+    FaIconComponent
+  ]
 })
 export class UploadPanel {
   private readonly api = inject(DrawingsApi);

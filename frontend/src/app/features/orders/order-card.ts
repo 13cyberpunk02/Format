@@ -16,14 +16,15 @@ import {
   StepState,
   buildTimeline,
   isActive,
-  translateCupsMessage,
+  translateCupsMessage, JOB_STATUS_ICONS,
 } from './order-status';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 const REFRESH_MS = 5_000;
 
 @Component({
   selector: 'app-order-card',
-  imports: [RouterLink, SheetThumb],
+  imports: [RouterLink, SheetThumb, FaIconComponent],
   templateUrl: './order-card.html',
 })
 export class OrderCard {
@@ -33,6 +34,7 @@ export class OrderCard {
   private readonly printApi = inject(PrintApi);
   private readonly drawingsApi = inject(DrawingsApi);
   protected readonly formats = inject(FormatsService);
+  protected readonly jobIcons = JOB_STATUS_ICONS;
 
   protected readonly order = httpResource<Order>(() => `/api/print/orders/${this.id()}`);
 

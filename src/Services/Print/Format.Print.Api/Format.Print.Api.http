@@ -92,6 +92,6 @@ Authorization: Bearer {{token}}
 GET {{print}}/print/admin/orders?status=Failed
 Authorization: Bearer {{token}}
 
-### Иванов пытается — 403
+### Иванов пытается - 403
 GET {{print}}/print/admin/orders
 Authorization: Bearer {{userToken}}

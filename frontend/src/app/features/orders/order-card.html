@@ -51,11 +51,18 @@
               <div class="flex flex-wrap items-baseline justify-between gap-3">
                 <span class="min-w-0 flex-1 text-[13px] text-ink-2">{{ job.description }}</span>
                 <span class="flex shrink-0 items-center gap-1.5">
-                  <span class="chip">{{ job.printer === 'office' ? 'принтер' : 'плоттер' }}</span>
+                  <span class="chip gap-1.5">
+                     <fa-icon class="icon" [icon]="job.printer === 'office' ? 'print' : 'scroll'" />
+                      {{ job.printer === 'office' ? 'принтер' : 'плоттер' }}
+                  </span>
                   @if (job.copies > 1) {
                     <span class="chip font-mono">×{{ job.copies }}</span>
                   }
-                  <span class="text-xs" [class]="job.status === 'Failed' ? 'text-warn' : job.status === 'Completed' ? 'text-acc-t' : 'text-ink-6'">
+                  <span
+                    class="flex items-center gap-1.5 text-xs"
+                    [class]="job.status === 'Failed' ? 'text-warn' : job.status === 'Completed' ? 'text-acc-t' : 'text-ink-6'"
+                  >
+                    <fa-icon class="icon" [icon]="jobIcons[job.status]" />
                     {{ jobLabels[job.status] }}
                   </span>
                 </span>
@@ -92,8 +99,12 @@
               </span>
             </div>
             <div class="flex gap-3 text-xs">
-              <button type="button" class="text-acc-t hover:text-acc-hi" (click)="view(item)">открыть</button>
-              <button type="button" class="text-acc-t hover:text-acc-hi" (click)="download(item)">скачать</button>
+              <button type="button" class="flex items-center gap-1 text-acc-t hover:text-acc-hi" (click)="view(item)">
+                <fa-icon class="icon" icon="eye" /> открыть
+              </button>
+              <button type="button" class="flex items-center gap-1 text-acc-t hover:text-acc-hi" (click)="download(item)">
+                <fa-icon class="icon" icon="download" /> скачать
+              </button>
             </div>
           </div>
         }
@@ -125,6 +136,9 @@
           @if (o.officeJobCount > 0) {
             <div class="flex justify-between gap-3"><span>На офисный принтер</span><span class="font-mono text-ink">{{ o.officeJobCount }}</span></div>
           }
+          @if (o.punch) {
+            <div class="flex justify-between gap-3"><span>Перфорация A4</span><span class="text-ink">да</span></div>
+          }
         </div>
 
         @if (actionError(); as message) {
@@ -132,7 +146,8 @@
         }
 
         @if (canRetry()) {
-          <button type="button" class="btn-primary text-ui" [disabled]="busy()" (click)="retry()">
+          <button type="button" class="btn-primary flex items-center justify-center gap-2 text-ui" [disabled]="busy()" (click)="retry()">
+            <fa-icon class="icon" icon="rotate-right" />
             {{ busy() ? 'Отправляем…' : 'Повторить печать' }}
           </button>
           <span class="text-xs leading-relaxed text-ink-6">Уже напечатанные листы повторно не отправятся.</span>
@@ -157,7 +172,10 @@
               </div>
             </div>
           } @else {
-            <button type="button" class="btn-ghost text-[13px]" (click)="confirmingCancel.set(true)">Отменить задание</button>
+            <button type="button" class="btn-ghost flex items-center justify-center gap-2 text-[13px]" (click)="confirmingCancel.set(true)">
+              <fa-icon class="icon" icon="ban" />
+              Отменить задание
+            </button>
           }
         } @else if (o.status === 'Processing') {
           <span class="text-xs text-ink-6">Задание сейчас отправляется на принтеры - отменить можно будет через несколько секунд.</span>

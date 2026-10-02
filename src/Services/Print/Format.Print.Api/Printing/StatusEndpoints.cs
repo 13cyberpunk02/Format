@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Format.Print.Api.Cups;
 using Format.Print.Api.Data;
 using Format.Security;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +16,11 @@ public sealed class PickupOptions
 
 public sealed record QueueSummaryDto(int Waiting, int Printing);
 public sealed record PickupDto(string Location, string Hours);
-public sealed record PrintStatusDto(IReadOnlyList<PrinterStatusDto> Printers, QueueSummaryDto Queue, PickupDto? Pickup);
+public sealed record PrintStatusDto(
+    IReadOnlyList<PrinterStatusDto> Printers,
+    QueueSummaryDto Queue,
+    PickupDto? Pickup,
+    bool PunchAvailable);
 public sealed record PrintSummaryDto(int Active, int CompletedSince, double RollMmSince);
 
 public static class StatusEndpoints
@@ -35,6 +40,7 @@ public static class StatusEndpoints
         PrinterStatusService printers,
         PrintDbContext db,
         IOptions<PickupOptions> pickupOptions,
+        CupsClient cups,
         CancellationToken ct)
     {
         var counts = await db.Orders
@@ -56,7 +62,8 @@ public static class StatusEndpoints
         return Results.Ok(new PrintStatusDto(
             await printers.GetAsync(ct),
             queue,
-            string.IsNullOrWhiteSpace(pickup.Location) ? null : new PickupDto(pickup.Location, pickup.Hours)));
+            string.IsNullOrWhiteSpace(pickup.Location) ? null : new PickupDto(pickup.Location, pickup.Hours),
+            cups.PunchAvailable));
     }
 
     /// <summary>Личная сводка: сколько в работе, сколько напечатано и какой расход с момента since.</summary>

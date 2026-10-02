@@ -7,19 +7,22 @@ import { PageHeader } from '../../core/page-header';
 import { PrintStatusService } from '../../core/print-status.service';
 import { translateCupsMessage } from '../../shared/cups-messages';
 import { formatDateTime, formatMeters, orderLabel } from '../../shared/format';
-import { PRINTER_STATE_LABELS, isPrinterProblem } from '../../shared/printer-state';
+import {PRINTER_STATE_LABELS, isPrinterProblem, PRINTER_STATE_ICONS, printerKindIcon} from '../../shared/printer-state';
 import { StatusChip } from '../../shared/ui/status-chip';
 import { isActive } from '../orders/order-status';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 const REFRESH_MS = 10_000;
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, StatusChip],
+  imports: [RouterLink, StatusChip, FaIconComponent],
   templateUrl: './home.html',
 })
 export class Home {
   protected readonly printStatus = inject(PrintStatusService);
+  protected readonly stateIcons = PRINTER_STATE_ICONS;
+  protected readonly kindIcon = printerKindIcon;
 
   /** Полночь первого числа по местному времени - в UTC, без плюса в адресе. */
   private readonly monthStart = (() => {
@@ -40,9 +43,9 @@ export class Home {
   protected readonly stats = computed(() => {
     const summary = this.summary.hasValue() ? this.summary.value() : null;
     return [
-      { label: 'В работе', note: 'мои задания', value: summary ? String(summary.active) : '-', accent: true },
-      { label: 'Напечатано', note: 'за этот месяц', value: summary ? String(summary.completedSince) : '-', accent: false },
-      { label: 'Расход рулона', note: 'за этот месяц', value: summary ? formatMeters(summary.rollMmSince) : '-', accent: false },
+      { label: 'В работе', note: 'мои задания', icon: 'gear', value: summary ? String(summary.active) : '—', accent: true },
+      { label: 'Напечатано', note: 'за этот месяц', icon: 'circle-check', value: summary ? String(summary.completedSince) : '-', accent: false },
+      { label: 'Расход рулона', note: 'за этот месяц', icon: 'scroll', value: summary ? formatMeters(summary.rollMmSince) : '-', accent: false },
     ];
   });
 

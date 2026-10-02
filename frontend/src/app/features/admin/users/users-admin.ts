@@ -9,7 +9,9 @@ import { formatDateTime } from '../../../shared/format';
 import { Modal } from '../../../shared/ui/modal';
 import { CreatedUser, UserCreateForm } from './user-create-form';
 import { UserEditForm } from './user-edit-form';
-import { ACCOUNT_STATUS_LABELS, ROLE_LABELS } from './user-labels';
+import {ACCOUNT_STATUS_ICONS, ACCOUNT_STATUS_LABELS, ROLE_ICONS, ROLE_LABELS} from './user-labels';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {isPrinterProblem} from '../../../shared/printer-state';
 
 interface Notice {
   text: string;
@@ -18,12 +20,15 @@ interface Notice {
 
 @Component({
   selector: 'app-users-admin',
-  imports: [Modal, UserCreateForm, UserEditForm],
+  imports: [Modal, UserCreateForm, UserEditForm, FaIconComponent],
   templateUrl: './users-admin.html',
 })
 export class UsersAdmin {
   private readonly api = inject(UsersApi);
   private readonly auth = inject(AuthService);
+
+  protected readonly roleIcons = ROLE_ICONS;
+  protected readonly statusIcons = ACCOUNT_STATUS_ICONS;
 
   protected readonly users = httpResource<AdminUser[]>(() => '/api/auth/users');
 

@@ -13,28 +13,41 @@ import { OrderDraft } from './order-draft';
 import { RollPreview } from './roll-preview';
 import { SheetCard } from './sheet-card';
 import { UploadPanel } from './upload-panel';
+import {PrintStatusService} from '../../core/print-status.service';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 
 type Source = 'upload' | 'library';
 
 @Component({
   selector: 'app-new-order',
-  imports: [UploadPanel, LibraryPanel, DraftList, RollPreview, SheetCard],
+  imports: [UploadPanel, LibraryPanel, DraftList, RollPreview, SheetCard, FaIconComponent],
   templateUrl: './new-order.html',
 })
 export class NewOrder {
   protected readonly draft = inject(OrderDraft);
   protected readonly formats = inject(FormatsService);
   private readonly printApi = inject(PrintApi);
+  private readonly printStatus = inject(PrintStatusService);
   private readonly router = inject(Router);
 
   protected readonly plural = plural;
   protected readonly formatMeters = formatMeters;
 
   protected readonly source = signal<Source>('upload');
-  protected readonly sources: { value: Source; label: string }[] = [
-    { value: 'upload', label: 'Загрузить' },
-    { value: 'library', label: 'Из загруженных' },
+  protected readonly sources: { value: Source; label: string; icon: string }[] = [
+    { value: 'upload', label: 'Загрузить', icon: 'cloud-arrow-up' },
+    { value: 'library', label: 'Из загруженных', icon: 'folder-open' },
   ];
+
+  /** Перфорация настроена на сервере. */
+  protected readonly punchAvailable = computed(
+    () => this.printStatus.status.hasValue() && this.printStatus.status.value().punchAvailable,
+  );
+
+  /** В задании есть что перфорировать. */
+  protected readonly hasA4 = computed(() => this.draft.entries().some((entry) => entry.drawing.format === 'A4'));
+
+  protected readonly punch = signal(false);
 
   private readonly requestItems = computed(() =>
     this.draft.entries().map((entry) => ({ drawingId: entry.drawing.id, copies: entry.copies })),
@@ -46,7 +59,7 @@ export class NewOrder {
     return items.length > 0 ? { url: '/api/print/preview', method: 'POST', body: { items } } : undefined;
   });
 
-  /** Последняя удачная раскладка — чтобы схема не пропадала, пока считается новая. */
+  /** Последняя удачная раскладка - чтобы схема не пропадала, пока считается новая. */
   protected readonly shownPreview = linkedSignal<
     { value: PrintPreview | undefined; empty: boolean },
     PrintPreview | undefined
@@ -122,9 +135,14 @@ export class NewOrder {
     this.submitError.set(null);
 
     try {
-      const order = await this.printApi.createOrder(this.requestItems(), this.title().trim() || null);
+      const order = await this.printApi.createOrder(
+        this.requestItems(),
+        this.title().trim() || null,
+        this.punch() && this.hasA4(),
+      );
       this.draft.clear();
       this.title.set('');
+      this.punch.set(false);
       await this.router.navigate(['/orders', order.id]);
     } catch (error) {
       this.submitError.set(problemMessage(error, 'Не удалось отправить задание.'));

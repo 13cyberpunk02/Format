@@ -201,3 +201,7 @@
     repeating-linear-gradient(0deg, var(--paper-grid) 0 1px, transparent 1px 8px),
     repeating-linear-gradient(90deg, var(--paper-grid) 0 1px, transparent 1px 8px);
 }
+
+@utility icon {
+  @apply inline-flex w-[1.25em] shrink-0 items-center justify-center;
+}

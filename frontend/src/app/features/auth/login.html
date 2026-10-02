@@ -69,21 +69,34 @@
         @let passwordField = loginForm.password();
         <label class="flex flex-col gap-1.5">
           <span class="text-meta text-ink-5">Пароль</span>
-          <input
-            class="field"
-            type="password"
-            autocomplete="current-password"
-            placeholder="••••••••"
-            [formField]="loginForm.password"
-            [attr.aria-invalid]="passwordField.touched() && passwordField.invalid()"
-          />
+          <div class="relative">
+            <input
+              #passwordInput="revealable"
+              appRevealable
+              class="field pr-11"
+              autocomplete="current-password"
+              placeholder="••••••••"
+              [formField]="loginForm.password"
+              [attr.aria-invalid]="passwordField.touched() && passwordField.invalid()"
+            />
+            <button
+              type="button"
+              class="absolute inset-y-0 right-0 grid w-11 place-items-center text-ink-6 hover:text-ink"
+              [attr.aria-label]="passwordInput.visible() ? 'Скрыть пароль' : 'Показать пароль'"
+              [attr.aria-pressed]="passwordInput.visible()"
+              (click)="passwordInput.toggle()"
+            >
+              <fa-icon [icon]="passwordInput.visible() ? 'eye-slash' : 'eye'" />
+            </button>
+          </div>
           @if (passwordField.touched() && passwordField.invalid()) {
             <span class="text-xs text-warn">{{ passwordField.errors()[0]?.message }}</span>
           }
         </label>
       </div>
 
-      <button type="submit" class="btn-primary" [disabled]="busy()">
+      <button type="submit" class="btn-primary flex items-center justify-center gap-2" [disabled]="busy()">
+        <fa-icon class="icon" icon="arrow-right-to-bracket" />
         {{ busy() ? 'Входим…' : 'Войти' }}
       </button>
 

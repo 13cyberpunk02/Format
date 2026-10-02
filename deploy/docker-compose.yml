@@ -18,6 +18,8 @@ x-plotter: &plotter
   Plotter__RollWidth: "914"
   Plotter__SideMargin: "3"
   Plotter__Gap: "10"
+  Plotter__LeadMargin: "10"
+  Plotter__TrailMargin: "0"
   Plotter__PairOnlyIfSaves: "false"
 
 services:
@@ -56,6 +58,7 @@ services:
       OFFICE_URI: ipp://192.168.0.42:631/ipp
       OFFICE_MODEL: /usr/share/cups/model/format/KMbeuC754ux.ppd
       OFFICE_INFO: Konica Minolta bizhub C654
+      OFFICE_OPTIONS: "KMFinisher=FS535 KMPunchUnit=PK520"
     logging: *logging
 
   auth:
@@ -71,7 +74,7 @@ services:
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       Jwt__AccessTokenMinutes: "15"
       Jwt__PrivateKeyPath: /run/secrets/jwt-signing.pem
-      Users__AllowedEmailDomain: company.ru
+      Users__AllowedEmailDomain: ite.spb.ru
       BootstrapAdmin__DisplayName: Администратор
       BootstrapAdmin__Department: Администрирование
     secrets:
@@ -126,6 +129,7 @@ services:
       Cups__Office__DisplayName: Konica Minolta bizhub C654
       Cups__Office__JobOptions__print-scaling: none
       Cups__Office__JobOptions__sides: one-sided
+      Cups__Office__PunchJobOptions__KMPunch: 2Hole
       Pickup__Location: Корпус Б, 1 этаж, каб. 112
       Pickup__Hours: пн–пт 09:00–19:00
     secrets:

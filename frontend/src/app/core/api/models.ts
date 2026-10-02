@@ -120,6 +120,7 @@ export interface Order {
   totalRollLengthMm: number;
   sheetCount: number;
   officeJobCount: number;
+  punch: boolean;
   startedAt: string | null;
   completedAt: string | null;
   error: string | null;
@@ -141,6 +142,7 @@ export interface PrintStatus {
   printers: PrinterStatus[];
   queue: { waiting: number; printing: number };
   pickup: { location: string; hours: string } | null;
+  punchAvailable: boolean;
 }
 
 export interface PrintSummary {
